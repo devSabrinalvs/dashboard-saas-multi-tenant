@@ -1,0 +1,381 @@
+Projeto: Dashboard SaaS Multi-tenant (com suíte de testes “empresa”)
+Stack escolhida (recomendada)
+
+App
+
+Next.js (App Router) + TypeScript
+
+Tailwind + shadcn/ui
+
+React Hook Form + Zod
+
+TanStack Query
+
+Auth / Sessão
+
+Auth.js (NextAuth)
+
+Banco
+
+PostgreSQL + Prisma
+
+Testes
+
+Jest + React Testing Library (unit/UI)
+
+MSW (mock de API no front)
+
+Jest + integração server (com DB)
+
+Playwright (E2E)
+
+Qualidade/CI
+
+ESLint + Prettier
+
+GitHub Actions
+
+Docker Compose (Postgres)
+
+Arquitetura (simples, forte, testável)
+Multi-tenant
+
+Tenant via rota: /org/[orgSlug]/...
+
+Tudo do produto tem orgId
+
+Server resolve orgSlug -> orgId e injeta no contexto
+
+Nunca aceitar orgId vindo do client
+
+Camadas
+
+UI → hooks (query/mutation) → route handler → use-case → repo (Prisma)
+
+Estrutura de pastas
+
+src/app (rotas/páginas)
+
+src/features/<feature>/ (feature-first)
+
+components/
+
+hooks/
+
+schemas/ (Zod)
+
+server/ (use-cases)
+
+repo/ (queries Prisma)
+
+tests/
+
+src/shared/
+
+auth/
+
+db/
+
+security/ (RBAC, guards)
+
+ui/
+
+utils/
+
+Funcionalidades (escopo final)
+Foundation
+
+Login/logout
+
+Criar organização
+
+Selecionar/trocar organização ativa
+
+Team
+
+Convidar membros
+
+Aceitar convite
+
+Alterar role
+
+Remover membro
+
+Core (escolha 1)
+
+Sugestão: Projects + Tasks
+
+CRUD Projects
+
+CRUD Tasks
+
+Filtros, paginação, status, tags
+
+Segurança/Enterprise
+
+RBAC (OWNER/ADMIN/MEMBER/VIEWER)
+
+Audit log (append-only)
+
+Rate limit (login/invite)
+
+Soft delete (opcional)
+
+Matriz de roles (boa pra anotar)
+
+OWNER
+
+tudo, inclusive billing e deletar org
+
+ADMIN
+
+gerencia membros e conteúdo, sem deletar org/billing (se você quiser separar)
+
+MEMBER
+
+CRUD do core (ex: projects/tasks), sem gerenciar membros
+
+VIEWER
+
+apenas leitura
+
+Permissões (exemplo):
+
+member:invite, member:remove, member:role:update
+
+project:create, project:update, project:delete
+
+audit:read
+
+billing:manage
+
+Segurança definida (checklist rápido)
+
+✅ Isolamento por orgId em todas queries
+
+✅ Server sempre checa membership + role
+
+✅ Validação Zod em params/body/query
+
+✅ Cookie HttpOnly (Auth.js)
+
+✅ Headers básicos (CSP mínima, frame-ancestors, nosniff)
+
+✅ Rate limit em rotas sensíveis
+
+✅ Audit log em ações críticas
+
+✅ Logs sem vazar tokens
+
+Testes (pirâmide)
+Unit (Jest)
+
+can()/RBAC
+
+validações Zod
+
+regras de plano/limites (se tiver)
+
+helpers
+
+UI (Jest + RTL + MSW)
+
+telas com loading/erro/empty
+
+forms (validação + submit)
+
+listagem com filtros/paginação (mockando API)
+
+Integração server (Jest + DB)
+
+cross-tenant bloqueado
+
+MEMBER proibido em ações de admin
+
+audit log é criado em mutações
+
+E2E (Playwright)
+
+login → criar org → criar project → convidar membro → membro aceita
+
+MEMBER tenta acessar billing/roles → bloqueado
+
+usuário de outra org tenta abrir URL do recurso → bloqueado
+
+Passo a passo de implementação (ordem recomendada)
+Etapa 0 — Setup (1ª base)
+
+Criar repo + Next.js App Router + TS
+
+Tailwind + shadcn/ui
+
+ESLint/Prettier
+
+Docker Compose com Postgres
+
+Prisma conectado + migrate inicial
+
+Saída: app sobe, db sobe, migrate roda.
+
+Etapa 1 — Auth e sessão
+
+Instalar Auth.js (NextAuth)
+
+Providers (ex: Credentials simples ou Google)
+
+getServerSession() funcionando
+
+Rotas protegidas (middleware/guard server)
+
+Saída: login/logout e páginas protegidas.
+
+Etapa 2 — Modelagem multi-tenant (DB)
+
+Criar models:
+
+User
+
+Organization (slug único)
+
+Membership (userId + orgId + role)
+
+Invite (orgId + email + token + status)
+
+AuditLog (orgId + actorUserId + action + metadata)
+
+Project (orgId + …)
+
+Task (orgId + projectId + …)
+
+Saída: schema sólido e migrações.
+
+Etapa 3 — Resolver tenant e proteger acesso
+
+Middleware/guard para rotas /org/[orgSlug]/*:
+
+resolve org pelo slug
+
+checa membership do usuário
+
+injeta orgId, role, userId em um “context”
+
+Criar helpers:
+
+requireAuth()
+
+requireOrgContext(orgSlug)
+
+assertPermission(context, permission)
+
+Saída: ninguém entra em org alheia.
+
+Etapa 4 — RBAC
+
+Implementar can(role, permission)
+
+assertPermission() no server
+
+UI esconde botões baseado em permission (só UX)
+
+Server bloqueia de verdade (segurança)
+
+Saída: roles funcionando e consistente.
+
+Etapa 5 — Organização (CRUD mínimo)
+
+Criar org (gera slug)
+
+Criador vira OWNER (Membership)
+
+Lista de orgs do usuário
+
+Seletor “org ativa” (UI)
+
+Saída: navegação por org.
+
+Etapa 6 — Convites (Team)
+
+Admin/Owner cria convite (gera token)
+
+Tela “aceitar convite” (token)
+
+Cria membership do convidado
+
+Owner/Admin altera role
+
+Remove membro
+
+Saída: time completo.
+
+Etapa 7 — Core (Projects + Tasks)
+
+CRUD Projects (com filtros/paginação)
+
+CRUD Tasks (por projeto, status, tags)
+
+UX com skeleton/loading/empty
+
+TanStack Query + invalidações
+
+Saída: produto usável.
+
+Etapa 8 — Audit Log
+
+Função logAudit(orgId, actorUserId, action, metadata)
+
+Logar: org created, invite created, role changed, project/task CRUD
+
+Tela audit com filtros (action, data, ator)
+
+Saída: “enterprise vibes”.
+
+Etapa 9 — Rate limit + headers
+
+Rate limit em:
+
+login (se aplicável)
+
+invite
+
+endpoints críticos de mutação
+
+Headers básicos no Next (CSP mínima, frame-ancestors, nosniff)
+
+Saída: segurança decente.
+
+Etapa 10 — Suíte de testes (em camadas)
+Unit (primeiro)
+
+RBAC e schemas
+
+UI com MSW
+
+forms + listagens
+
+Integração server com DB
+
+cross-tenant + permissões + audit
+
+E2E Playwright
+
+fluxos críticos
+
+Saída: testes que passam confiança.
+
+Etapa 11 — CI (GitHub Actions)
+
+Pipeline:
+
+install
+
+lint
+
+typecheck
+
+test (jest)
+
+e2e (playwright)
+
+(opcional) migrate em DB do CI
+
+Saída: PR só passa se tá ok.
