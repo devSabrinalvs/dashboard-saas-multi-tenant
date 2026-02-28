@@ -1,9 +1,12 @@
 import { withAuth } from "next-auth/middleware";
 
 /**
- * Protege todas as rotas do grupo (app).
- * Se não estiver autenticado, redireciona para /login.
- * Funciona via cookie HttpOnly do next-auth (JWT).
+ * Middleware de autenticação: verifica apenas se existe sessão JWT válida.
+ * Não faz queries no DB — resolução de org e membership é feita
+ * nos Server Components via requireOrgContext().
+ *
+ * Rotas protegidas:
+ *  - /org/* → inclui /org/select e /org/[orgSlug]/**
  */
 export default withAuth({
   pages: {
@@ -12,5 +15,5 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*"],
+  matcher: ["/org/:path*"],
 };
