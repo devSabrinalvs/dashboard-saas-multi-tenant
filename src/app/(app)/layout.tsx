@@ -1,14 +1,14 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/auth";
-import { AppShell } from "@/components/layout/app-shell";
+import { requireAuth } from "@/server/auth/require-auth";
 
+/**
+ * Layout do grupo (app): garante autenticação sem aplicar AppShell.
+ * O AppShell é aplicado pelo grupo (tenant) que tem contexto de org.
+ */
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-  if (!session) redirect("/login");
-
-  return <AppShell userEmail={session.user.email ?? ""}>{children}</AppShell>;
+  await requireAuth();
+  return <>{children}</>;
 }

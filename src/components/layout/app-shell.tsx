@@ -4,12 +4,19 @@ import { Topbar } from "./topbar";
 interface AppShellProps {
   children: React.ReactNode;
   userEmail: string;
+  orgSlug: string;
+  orgName: string;
 }
 
-export function AppShell({ children, userEmail }: AppShellProps) {
+export function AppShell({
+  children,
+  userEmail,
+  orgSlug,
+  orgName,
+}: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <SidebarNav />
+      <SidebarNav orgSlug={orgSlug} orgName={orgName} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar userEmail={userEmail} />
