@@ -5,20 +5,35 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/settings", label: "Configurações", icon: Settings },
-] as const;
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+}
 
-export function SidebarNav() {
+interface SidebarNavProps {
+  orgSlug: string;
+  orgName: string;
+}
+
+export function SidebarNav({ orgSlug, orgName }: SidebarNavProps) {
   const pathname = usePathname();
+  const base = `/org/${orgSlug}`;
+
+  const navItems: NavItem[] = [
+    { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
+    { href: `${base}/settings`, label: "Configurações", icon: Settings },
+  ];
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r bg-sidebar">
-      {/* Logo */}
+      {/* Org name */}
       <div className="flex h-14 items-center border-b px-4">
-        <span className="font-semibold tracking-tight text-sidebar-foreground">
-          SaaS App
+        <span
+          className="truncate font-semibold tracking-tight text-sidebar-foreground"
+          title={orgName}
+        >
+          {orgName}
         </span>
       </div>
 
@@ -37,7 +52,7 @@ export function SidebarNav() {
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              <Icon className="size-4 shrink-0" aria-hidden={true} />
               {label}
             </Link>
           );

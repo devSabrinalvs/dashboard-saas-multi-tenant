@@ -4,10 +4,9 @@
  *
  * Cria (idempotente):
  *  - 1 usuário de teste (env: SEED_USER_EMAIL / SEED_USER_PASSWORD)
- *  - 1 organização (slug: "org-default")
- *  - 1 membership OWNER (usuário ↔ organização)
- *  - 1 projeto de exemplo
- *  - 2 tasks de exemplo
+ *  - 2 organizações: "org-default" e "acme"
+ *  - memberships OWNER nas duas orgs
+ *  - 1 projeto de exemplo + 2 tasks (em org-default)
  */
 import "dotenv/config";
 import {
@@ -70,7 +69,22 @@ async function main() {
       role: Role.OWNER,
     },
   });
-  console.log(`✓ Membership:    ${membership.role}`);
+  console.log(`✓ Membership:    ${membership.role} em ${org.slug}`);
+
+  // ── 3b. Segunda organização para testar o Org Switcher ─────────────────────
+  const acme = await prisma.organization.upsert({
+    where: { slug: "acme" },
+    update: {},
+    create: { name: "Acme Corp", slug: "acme" },
+  });
+  console.log(`✓ Organização:   ${acme.name} (slug: ${acme.slug})`);
+
+  await prisma.membership.upsert({
+    where: { userId_orgId: { userId: user.id, orgId: acme.id } },
+    update: { role: Role.OWNER },
+    create: { userId: user.id, orgId: acme.id, role: Role.OWNER },
+  });
+  console.log(`✓ Membership:    OWNER em ${acme.slug}`);
 
   // ── 4. Projeto ──────────────────────────────────────────────────────────────
   let project = await prisma.project.findFirst({
