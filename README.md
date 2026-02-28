@@ -1,6 +1,6 @@
 # Dashboard SaaS Multi-tenant
 
-Etapa 1 — Auth (email + senha).
+Etapa 3 — Resolução de tenant e proteção de acesso por organização.
 
 ## Stack
 
@@ -19,143 +19,131 @@ Etapa 1 — Auth (email + senha).
 
 ## Como rodar do zero
 
-### 1. Instalar dependências
-
-```bash
+```powershell
 pnpm install
-```
-
-### 2. Configurar variáveis de ambiente
-
-```bash
-cp .env.example .env
-```
-
-Edite o `.env` e preencha:
-
-| Variável             | Descrição                                  |
-| -------------------- | ------------------------------------------ |
-| `DATABASE_URL`       | Já preenchida para o Postgres local        |
-| `NEXTAUTH_SECRET`    | String aleatória (use `openssl rand -base64 32`) |
-| `NEXTAUTH_URL`       | `http://localhost:3000` em dev             |
-| `SEED_USER_EMAIL`    | Email do usuário de teste                  |
-| `SEED_USER_PASSWORD` | Senha do usuário de teste (mínimo 6 chars) |
-
-### 3. Subir o banco de dados
-
-```bash
+cp .env.example .env   # editar NEXTAUTH_SECRET, SEED_USER_*
 pnpm db:up
-```
-
-Isso roda `docker compose up -d` e sobe um Postgres na porta 5432.
-
-### 4. Rodar a migração do Prisma
-
-```bash
 pnpm db:migrate
-```
-
-Na primeira vez, ele vai pedir um nome para a migração. Digite `init` e pressione Enter.
-
-### 5. Popular o banco com usuário de teste
-
-```bash
 pnpm db:seed
-```
-
-Cria (ou atualiza) o usuário definido em `SEED_USER_EMAIL` / `SEED_USER_PASSWORD`.
-
-### 6. Subir o app
-
-```bash
 pnpm dev
 ```
 
-Acesse **http://localhost:3000** — você será redirecionado para **/login**.
+Acesse **http://localhost:3000** → `/login` → `/org/select`.
 
-Entre com as credenciais do seed. Após o login, você cai em **/dashboard**.
+---
 
-## Fluxo de autenticação
+## Fluxo de navegação
 
 ```
-/ → verifica sessão → /login  (não autenticado)
-                    → /dashboard (autenticado)
+/  →  sessão?  →  /org/select   (logado)
+               →  /login        (não logado)
 
-/login → Credentials provider → JWT session → /dashboard
-/dashboard → middleware (withAuth) + server-side session check
-           → /login se não autenticado
+/org/select
+  → 0 orgs: tela "sem organização"
+  → 1 org:  redirect automático para /org/[slug]/dashboard
+  → 2+ orgs: lista para escolher
+
+/org/[orgSlug]/dashboard
+  middleware (JWT check) → requireOrgContext(orgSlug) → renderiza
+  ↓ sem sessão          → /login
+  ↓ org não existe      → 404
+  ↓ não é membro        → 404
 ```
 
-## Checklist de validação
+## Proteção de acesso (duas camadas)
 
-- [ ] `pnpm dev` sobe sem erros
-- [ ] http://localhost:3000 redireciona para /login
-- [ ] Login com credenciais corretas vai para /dashboard
-- [ ] Login com credenciais erradas mostra mensagem de erro
-- [ ] /dashboard sem sessão redireciona para /login
-- [ ] Botão "Sair" desloga e vai para /login
-- [ ] `pnpm lint` passa sem erros
-- [ ] `pnpm typecheck` passa sem erros
-- [ ] `pnpm format:check` passa sem erros
+| Camada | O que faz | Onde |
+|---|---|---|
+| **Middleware** | Verifica JWT (sem DB) | `src/middleware.ts` |
+| **requireOrgContext** | Resolve org + checa membership | Server Components |
+
+> 404 em vez de 403: não expõe a existência de orgs que o usuário não acessa.
+
+## Como testar
+
+### Fluxo feliz
+```
+1. pnpm db:seed  →  cria usuário + orgs "org-default" e "acme"
+2. pnpm dev
+3. Acessar http://localhost:3000
+4. Login: teste@example.com / senha123
+5. /org/select mostra 2 orgs para escolher
+6. Clicar em "Acme Corp" → /org/acme/dashboard
+7. Sidebar mostra links corretos para /org/acme/*
+```
+
+### Fluxo bloqueado
+```
+# Org que não existe → 404
+http://localhost:3000/org/outra-empresa/dashboard
+
+# Sem sessão → /login
+(abrir em aba anônima)
+http://localhost:3000/org/acme/dashboard
+```
+
+## Credenciais de teste
+
+| Campo | Valor |
+|---|---|
+| Email | `teste@example.com` |
+| Senha | `senha123` |
+
+---
+
+## Helpers server-side
+
+### `requireAuth()` — `src/server/auth/require-auth.ts`
+Garante sessão ativa. Redireciona para `/login` se não houver.
+Retorna `{ userId, email }`.
+
+### `requireOrgContext(orgSlug)` — `src/server/org/require-org-context.ts`
+1. Chama `requireAuth()`
+2. Busca org pelo slug — `notFound()` se não existir
+3. Verifica membership — `notFound()` se não for membro
+
+Retorna `{ userId, email, orgId, orgSlug, orgName, role }`.
+
+---
 
 ## Scripts disponíveis
 
-| Comando              | O que faz                             |
-| -------------------- | ------------------------------------- |
-| `pnpm dev`           | Inicia o app em modo dev              |
-| `pnpm build`         | Build de produção                     |
-| `pnpm lint`          | Roda ESLint                           |
-| `pnpm typecheck`     | Verifica tipos TypeScript             |
-| `pnpm format`        | Formata código com Prettier           |
-| `pnpm format:check`  | Verifica se código está formatado     |
-| `pnpm db:up`         | Sobe Postgres via Docker              |
-| `pnpm db:down`       | Para o Postgres                       |
-| `pnpm db:migrate`    | Roda migrações do Prisma              |
-| `pnpm db:generate`   | Gera o Prisma Client                  |
-| `pnpm db:seed`       | Cria usuário de teste no banco        |
-| `pnpm db:studio`     | Abre o Prisma Studio (GUI do banco)   |
+| Comando | O que faz |
+|---|---|
+| `pnpm dev` | Inicia o app em modo dev |
+| `pnpm build` | Build de produção |
+| `pnpm lint` | Roda ESLint |
+| `pnpm typecheck` | Verifica tipos TypeScript |
+| `pnpm format` | Formata código com Prettier |
+| `pnpm db:up` | Sobe Postgres via Docker |
+| `pnpm db:down` | Para o Postgres |
+| `pnpm db:migrate` | Roda migrações do Prisma |
+| `pnpm db:generate` | Regenera o Prisma Client |
+| `pnpm db:seed` | Popula banco com dados de exemplo |
+| `pnpm db:studio` | Abre Prisma Studio (`http://localhost:5555`) |
 
 ## Estrutura de arquivos
 
 ```
-├── docker-compose.yml
-├── prisma/
-│   ├── schema.prisma          # User, Account, Session, VerificationToken
-│   ├── migrations/            # Migrações geradas pelo Prisma
-│   └── seed.ts                # Cria usuário de teste
-├── prisma.config.ts
-├── src/
-│   ├── app/
-│   │   ├── api/auth/[...nextauth]/
-│   │   │   └── route.ts       # Handler next-auth
-│   │   ├── dashboard/
-│   │   │   └── page.tsx       # Página protegida (server component)
-│   │   ├── login/
-│   │   │   └── page.tsx       # Formulário de login (client component)
-│   │   ├── globals.css
-│   │   ├── layout.tsx         # Root layout com SessionProvider
-│   │   └── page.tsx           # Redireciona para /login ou /dashboard
-│   ├── auth/
-│   │   ├── index.ts           # getSession() helper
-│   │   ├── next-auth.d.ts     # Tipos estendidos de sessão
-│   │   └── options.ts         # NextAuthOptions (Credentials + callbacks)
-│   ├── components/
-│   │   ├── session-provider.tsx
-│   │   ├── sign-out-button.tsx
-│   │   └── ui/
-│   │       ├── button.tsx
-│   │       ├── input.tsx
-│   │       └── label.tsx
-│   ├── generated/
-│   │   └── prisma/            # Prisma Client gerado (gitignored)
-│   ├── lib/
-│   │   ├── prisma.ts          # Singleton PrismaClient (Prisma 7 + PrismaPg)
-│   │   └── utils.ts           # cn() helper
-│   └── middleware.ts          # withAuth — protege /dashboard
-├── .env.example
-├── .prettierrc
-├── eslint.config.mjs
-├── next.config.ts
-├── postcss.config.mjs
-└── tsconfig.json
+src/
+├── app/
+│   ├── (public)/login/            # Login (sem AppShell)
+│   ├── (app)/                     # Auth check — sem AppShell
+│   │   └── org/select/            # Seletor de organização
+│   ├── (tenant)/org/[orgSlug]/    # Rotas de tenant (com AppShell)
+│   │   ├── layout.tsx             # requireOrgContext + AppShell
+│   │   ├── dashboard/page.tsx
+│   │   └── settings/page.tsx
+│   └── page.tsx                   # Redirect → /org/select ou /login
+├── server/
+│   ├── auth/require-auth.ts       # requireAuth()
+│   ├── org/require-org-context.ts # requireOrgContext()
+│   └── repo/
+│       ├── organization-repo.ts   # findOrgBySlug, findOrgsByUserId
+│       └── membership-repo.ts     # findMembership
+├── components/layout/
+│   ├── app-shell.tsx              # Shell (recebe orgSlug + orgName)
+│   ├── sidebar-nav.tsx            # Links /org/[slug]/*
+│   └── topbar.tsx                 # Theme toggle + avatar dropdown
+└── middleware.ts                  # JWT check para /org/:path*
 ```

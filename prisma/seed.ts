@@ -1,9 +1,19 @@
 /**
- * Seed: cria o usuário de teste definido nas variáveis de ambiente.
+ * Seed: popula o banco com dados mínimos para desenvolvimento.
  * Executar com: pnpm db:seed
+ *
+ * Cria (idempotente):
+ *  - 1 usuário de teste (env: SEED_USER_EMAIL / SEED_USER_PASSWORD)
+ *  - 2 organizações: "org-default" e "acme"
+ *  - memberships OWNER nas duas orgs
+ *  - 1 projeto de exemplo + 2 tasks (em org-default)
  */
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
+import {
+  PrismaClient,
+  Role,
+  TaskStatus,
+} from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
@@ -21,13 +31,12 @@ async function main() {
       "Defina SEED_USER_EMAIL e SEED_USER_PASSWORD no .env antes de rodar o seed."
     );
   }
-
   if (password.length < 6) {
     throw new Error("SEED_USER_PASSWORD deve ter pelo menos 6 caracteres.");
   }
 
+  // ── 1. Usuário ──────────────────────────────────────────────────────────────
   const hashedPassword = await bcrypt.hash(password, 12);
-
   const user = await prisma.user.upsert({
     where: { email },
     update: { password: hashedPassword },
@@ -37,8 +46,93 @@ async function main() {
       password: hashedPassword,
     },
   });
+  console.log(`✓ Usuário:       ${user.email} (id: ${user.id})`);
 
-  console.log(`✓ Usuário pronto: ${user.email} (id: ${user.id})`);
+  // ── 2. Organização ──────────────────────────────────────────────────────────
+  const org = await prisma.organization.upsert({
+    where: { slug: "org-default" },
+    update: {},
+    create: {
+      name: "Organização de Teste",
+      slug: "org-default",
+    },
+  });
+  console.log(`✓ Organização:   ${org.name} (slug: ${org.slug})`);
+
+  // ── 3. Membership OWNER ─────────────────────────────────────────────────────
+  const membership = await prisma.membership.upsert({
+    where: { userId_orgId: { userId: user.id, orgId: org.id } },
+    update: { role: Role.OWNER },
+    create: {
+      userId: user.id,
+      orgId: org.id,
+      role: Role.OWNER,
+    },
+  });
+  console.log(`✓ Membership:    ${membership.role} em ${org.slug}`);
+
+  // ── 3b. Segunda organização para testar o Org Switcher ─────────────────────
+  const acme = await prisma.organization.upsert({
+    where: { slug: "acme" },
+    update: {},
+    create: { name: "Acme Corp", slug: "acme" },
+  });
+  console.log(`✓ Organização:   ${acme.name} (slug: ${acme.slug})`);
+
+  await prisma.membership.upsert({
+    where: { userId_orgId: { userId: user.id, orgId: acme.id } },
+    update: { role: Role.OWNER },
+    create: { userId: user.id, orgId: acme.id, role: Role.OWNER },
+  });
+  console.log(`✓ Membership:    OWNER em ${acme.slug}`);
+
+  // ── 4. Projeto ──────────────────────────────────────────────────────────────
+  let project = await prisma.project.findFirst({
+    where: { orgId: org.id, name: "Projeto de Exemplo" },
+  });
+  if (!project) {
+    project = await prisma.project.create({
+      data: {
+        orgId: org.id,
+        name: "Projeto de Exemplo",
+        description: "Projeto criado pelo seed para testes e validação.",
+      },
+    });
+  }
+  console.log(`✓ Projeto:       ${project.name} (id: ${project.id})`);
+
+  // ── 5. Tasks ────────────────────────────────────────────────────────────────
+  const existingTaskCount = await prisma.task.count({
+    where: { projectId: project.id },
+  });
+
+  if (existingTaskCount === 0) {
+    await prisma.task.createMany({
+      data: [
+        {
+          orgId: org.id,
+          projectId: project.id,
+          title: "Configurar ambiente de desenvolvimento",
+          description: "Instalar dependências, Docker e configurar .env",
+          status: TaskStatus.DONE,
+          tags: ["setup", "infra"],
+        },
+        {
+          orgId: org.id,
+          projectId: project.id,
+          title: "Implementar autenticação",
+          description: "Login com email/senha usando next-auth e bcrypt",
+          status: TaskStatus.IN_PROGRESS,
+          tags: ["auth", "backend"],
+        },
+      ],
+    });
+  }
+
+  const taskCount = await prisma.task.count({ where: { projectId: project.id } });
+  console.log(`✓ Tasks:         ${taskCount} tarefa(s) no projeto`);
+
+  console.log("\n✅ Seed concluído com sucesso.");
 }
 
 main()
