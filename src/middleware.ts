@@ -1,7 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 
 /**
- * Protege todas as rotas que começam com /dashboard.
+ * Protege todas as rotas do grupo (app).
  * Se não estiver autenticado, redireciona para /login.
  * Funciona via cookie HttpOnly do next-auth (JWT).
  */
@@ -12,5 +12,5 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/settings/:path*"],
 };
