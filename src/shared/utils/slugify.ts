@@ -11,7 +11,7 @@ export function slugify(str: string): string {
     .toLowerCase()
     .normalize("NFD") // decompõe caracteres acentuados (ã → a + combining)
     .replace(/[\u0300-\u036f]/g, "") // remove diacritics
-    .replace(/[^a-z0-9\s-]/g, "") // remove tudo exceto letras, números, espaços e hífens
+    .replace(/[^a-z0-9\s-]/g, " ") // inválidos → espaço (age como separador de palavra)
     .trim()
     .replace(/\s+/g, "-") // espaços → hífens
     .replace(/-+/g, "-") // colapsa múltiplos hífens
