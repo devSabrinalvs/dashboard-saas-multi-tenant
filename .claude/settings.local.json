@@ -54,7 +54,22 @@
       "Bash(pnpm exec prisma migrate dev --name multi-tenant)",
       "Bash(pnpm db:seed)",
       "Bash(pnpm add -D jest @types/jest ts-jest)",
-      "Bash(pnpm test)"
+      "Bash(pnpm test)",
+      "Bash(ls -la /c/projetos/dashboard-saas-multi-tenant/src/app/\\\\\\(app\\\\\\)/)",
+      "Bash(ls -la /c/projetos/dashboard-saas-multi-tenant/src/app/\\\\\\(tenant\\\\\\)/org/[orgSlug]/)",
+      "Bash(git add README.md \"src/app/\\(app\\)/dashboard/page.tsx\" \"src/app/\\(app\\)/org/select/page.tsx\" \"src/app/\\(app\\)/org/new/\" \"src/app/\\(public\\)/login/page.tsx\" \"src/app/\\(tenant\\)/org/[orgSlug]/layout.tsx\" \"src/app/api/org/route.ts\" \"src/components/layout/app-shell.tsx\" \"src/components/layout/sidebar-nav.tsx\" \"src/components/layout/org-switcher.tsx\" \"src/schemas/\" \"src/server/repo/membership-repo.ts\" \"src/server/repo/organization-repo.ts\" \"src/server/use-cases/\" \"src/shared/\")",
+      "Bash(pnpm test:unit)",
+      "Bash(docker compose -f C:projetosdashboard-saas-multi-tenantdocker-compose.yml ps)",
+      "Bash(docker exec dashboard-saas-multi-tenant-postgres-1 psql -U postgres -c \"SELECT datname FROM pg_database WHERE datname = ''saas_multitenant_test'';\")",
+      "Bash(docker exec dashboard-saas-multi-tenant-postgres-1 psql -U postgres -c \"CREATE DATABASE saas_multitenant_test;\")",
+      "Bash(node tests/scripts/migrate-test-db.js)",
+      "Bash(pnpm test:int)",
+      "Bash(node tests/scripts/run-int-tests.js)",
+      "Bash(pnpm list @jest/globals)",
+      "Bash(pnpm add -D @jest/globals)",
+      "Bash(git -C C:/projetos/dashboard-saas-multi-tenant status)",
+      "Bash(git -C C:/projetos/dashboard-saas-multi-tenant log --oneline -5)",
+      "Bash(git add README.md jest.config.js jest.config.int.js package.json pnpm-lock.yaml src/shared/utils/slugify.ts tsconfig.json tsconfig.jest.int.json .env.test src/server/org/__tests__/ src/server/repo/__tests__/ src/server/use-cases/__tests__/ src/shared/utils/__tests__/ tests/)"
     ]
   }
 }
