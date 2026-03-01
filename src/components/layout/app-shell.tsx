@@ -1,11 +1,13 @@
 import { SidebarNav } from "./sidebar-nav";
 import { Topbar } from "./topbar";
+import type { OrgLink } from "./org-switcher";
 
 interface AppShellProps {
   children: React.ReactNode;
   userEmail: string;
   orgSlug: string;
   orgName: string;
+  userOrgs: OrgLink[];
 }
 
 export function AppShell({
@@ -13,10 +15,11 @@ export function AppShell({
   userEmail,
   orgSlug,
   orgName,
+  userOrgs,
 }: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <SidebarNav orgSlug={orgSlug} orgName={orgName} />
+      <SidebarNav orgSlug={orgSlug} orgName={orgName} userOrgs={userOrgs} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar userEmail={userEmail} />

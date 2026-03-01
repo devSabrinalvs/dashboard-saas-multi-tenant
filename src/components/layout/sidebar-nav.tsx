@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OrgSwitcher, type OrgLink } from "./org-switcher";
 
 interface NavItem {
   href: string;
@@ -14,9 +15,10 @@ interface NavItem {
 interface SidebarNavProps {
   orgSlug: string;
   orgName: string;
+  userOrgs: OrgLink[];
 }
 
-export function SidebarNav({ orgSlug, orgName }: SidebarNavProps) {
+export function SidebarNav({ orgSlug, orgName, userOrgs }: SidebarNavProps) {
   const pathname = usePathname();
   const base = `/org/${orgSlug}`;
 
@@ -27,14 +29,13 @@ export function SidebarNav({ orgSlug, orgName }: SidebarNavProps) {
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r bg-sidebar">
-      {/* Org name */}
-      <div className="flex h-14 items-center border-b px-4">
-        <span
-          className="truncate font-semibold tracking-tight text-sidebar-foreground"
-          title={orgName}
-        >
-          {orgName}
-        </span>
+      {/* Org switcher */}
+      <div className="flex h-14 items-center border-b px-3">
+        <OrgSwitcher
+          currentSlug={orgSlug}
+          currentName={orgName}
+          orgs={userOrgs}
+        />
       </div>
 
       {/* Nav */}

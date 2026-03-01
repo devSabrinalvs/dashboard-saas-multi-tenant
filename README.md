@@ -1,6 +1,6 @@
 # Dashboard SaaS Multi-tenant
 
-Etapa 3 — Resolução de tenant e proteção de acesso por organização.
+Etapa 5 — Organization CRUD mínimo: criação de org, OrgSwitcher e fluxo de navegação completo.
 
 ## Stack
 
@@ -39,9 +39,15 @@ Acesse **http://localhost:3000** → `/login` → `/org/select`.
                →  /login        (não logado)
 
 /org/select
-  → 0 orgs: tela "sem organização"
+  → 0 orgs: redirect automático para /org/new
   → 1 org:  redirect automático para /org/[slug]/dashboard
   → 2+ orgs: lista para escolher
+
+/org/new
+  → Formulário de criação de org
+  → Slug gerado automaticamente a partir do nome (se não informado)
+  → 201: redirect para /org/[slug]/dashboard
+  → 409: erro de slug duplicado mostrado inline
 
 /org/[orgSlug]/dashboard
   middleware (JWT check) → requireOrgContext(orgSlug) → renderiza
@@ -49,6 +55,21 @@ Acesse **http://localhost:3000** → `/login` → `/org/select`.
   ↓ org não existe      → 404
   ↓ não é membro        → 404
 ```
+
+## Como criar uma organização
+
+1. Após o login, se você não tiver nenhuma org, será redirecionado para `/org/new`
+2. Preencha o **Nome** (obrigatório, mín. 2 caracteres)
+3. O **Slug** é opcional — se vazio, é gerado automaticamente a partir do nome
+   - Exemplo: "Minha Empresa" → `minha-empresa`
+   - Usado na URL: `/org/minha-empresa/dashboard`
+4. Clique em **Criar organização**
+5. Você é redirecionado para o dashboard da nova org como **OWNER**
+
+## OrgSwitcher (troca de organização)
+
+O sidebar contém um dropdown que mostra todas as suas organizações.
+Clique no nome da org atual para abrir o menu e navegar entre orgs ou criar uma nova.
 
 ## Proteção de acesso (duas camadas)
 
@@ -61,15 +82,36 @@ Acesse **http://localhost:3000** → `/login` → `/org/select`.
 
 ## Como testar
 
-### Fluxo feliz
+### Fluxo: usuário com 2+ orgs
 ```
-1. pnpm db:seed  →  cria usuário + orgs "org-default" e "acme"
+1. pnpm db:seed  →  cria usuários + orgs "org-default" e "acme"
 2. pnpm dev
 3. Acessar http://localhost:3000
-4. Login: teste@example.com / senha123
+4. Login: owner@example.com / senha123
 5. /org/select mostra 2 orgs para escolher
 6. Clicar em "Acme Corp" → /org/acme/dashboard
-7. Sidebar mostra links corretos para /org/acme/*
+7. Sidebar mostra OrgSwitcher no topo
+8. Clicar no OrgSwitcher → dropdown com as duas orgs
+```
+
+### Fluxo: usuário com 1 org
+```
+1. Login: viewer@example.com / senha123
+2. /org/select → redirect automático para /org/acme/dashboard
+```
+
+### Fluxo: usuário sem org
+```
+1. Criar novo usuário (sem seed)
+2. Login → /org/select → redirect automático para /org/new
+3. Criar org → /org/[slug]/dashboard
+```
+
+### Fluxo: slug duplicado
+```
+1. Acessar /org/new
+2. Preencher slug "acme" (já existe no seed)
+3. Submit → erro inline "Esse slug já está em uso."
 ```
 
 ### Fluxo bloqueado
@@ -82,12 +124,13 @@ http://localhost:3000/org/outra-empresa/dashboard
 http://localhost:3000/org/acme/dashboard
 ```
 
-## Credenciais de teste
+## Credenciais de teste (seed)
 
-| Campo | Valor |
-|---|---|
-| Email | `teste@example.com` |
-| Senha | `senha123` |
+| Usuário | Email | Senha | Orgs |
+|---|---|---|---|
+| Owner | `owner@example.com` | `senha123` | org-default, acme |
+| Member | `member@example.com` | `senha123` | acme |
+| Viewer | `viewer@example.com` | `senha123` | acme |
 
 ---
 
@@ -104,6 +147,10 @@ Retorna `{ userId, email }`.
 
 Retorna `{ userId, email, orgId, orgSlug, orgName, role }`.
 
+### `createOrganization({ name, slug, userId })` — `src/server/use-cases/create-organization.ts`
+Use-case que cria org + membership OWNER em `$transaction`.
+Lança `SlugConflictError` (409) se o slug já estiver em uso.
+
 ---
 
 ## Scripts disponíveis
@@ -115,6 +162,7 @@ Retorna `{ userId, email, orgId, orgSlug, orgName, role }`.
 | `pnpm lint` | Roda ESLint |
 | `pnpm typecheck` | Verifica tipos TypeScript |
 | `pnpm format` | Formata código com Prettier |
+| `pnpm test` | Roda testes unitários (Jest) |
 | `pnpm db:up` | Sobe Postgres via Docker |
 | `pnpm db:down` | Para o Postgres |
 | `pnpm db:migrate` | Roda migrações do Prisma |
@@ -129,21 +177,36 @@ src/
 ├── app/
 │   ├── (public)/login/            # Login (sem AppShell)
 │   ├── (app)/                     # Auth check — sem AppShell
-│   │   └── org/select/            # Seletor de organização
+│   │   ├── dashboard/page.tsx     # Redirect legado → /org/select
+│   │   └── org/
+│   │       ├── select/page.tsx    # Seletor de organização
+│   │       └── new/page.tsx       # Criação de organização
 │   ├── (tenant)/org/[orgSlug]/    # Rotas de tenant (com AppShell)
-│   │   ├── layout.tsx             # requireOrgContext + AppShell
+│   │   ├── layout.tsx             # requireOrgContext + AppShell + userOrgs
 │   │   ├── dashboard/page.tsx
 │   │   └── settings/page.tsx
+│   ├── api/org/route.ts           # POST /api/org
 │   └── page.tsx                   # Redirect → /org/select ou /login
+├── schemas/
+│   └── organization.ts            # createOrgFormSchema + createOrgApiSchema
+├── security/
+│   ├── permissions.ts             # Permission union type
+│   ├── rbac.ts                    # ROLE_MATRIX + can()
+│   └── assert-permission.ts       # assertPermission() + PermissionDeniedError
 ├── server/
 │   ├── auth/require-auth.ts       # requireAuth()
 │   ├── org/require-org-context.ts # requireOrgContext()
-│   └── repo/
-│       ├── organization-repo.ts   # findOrgBySlug, findOrgsByUserId
-│       └── membership-repo.ts     # findMembership
+│   ├── repo/
+│   │   ├── organization-repo.ts   # findOrgBySlug, findOrgsByUserId, createOrg
+│   │   └── membership-repo.ts     # findMembership, createMembership
+│   └── use-cases/
+│       └── create-organization.ts # createOrganization + SlugConflictError
+├── shared/
+│   └── utils/slugify.ts           # string → url-safe slug
 ├── components/layout/
-│   ├── app-shell.tsx              # Shell (recebe orgSlug + orgName)
-│   ├── sidebar-nav.tsx            # Links /org/[slug]/*
+│   ├── app-shell.tsx              # Shell (recebe orgSlug + orgName + userOrgs)
+│   ├── sidebar-nav.tsx            # OrgSwitcher + links /org/[slug]/*
+│   ├── org-switcher.tsx           # Dropdown de troca de org
 │   └── topbar.tsx                 # Theme toggle + avatar dropdown
 └── middleware.ts                  # JWT check para /org/:path*
 ```
