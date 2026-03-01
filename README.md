@@ -153,6 +153,68 @@ Lança `SlugConflictError` (409) se o slug já estiver em uso.
 
 ---
 
+## Testes automatizados
+
+### Estrutura
+
+| Tipo | Arquivo | Ferramenta |
+|---|---|---|
+| Unitário | `src/**/__tests__/*.test.ts` | Jest CJS + ts-jest |
+| Integração (DB) | `src/**/__tests__/*.int.test.ts` | Jest ESM (`--experimental-vm-modules`) |
+
+### Banco de dados de teste
+
+Os testes de integração usam um banco Postgres separado (`saas_multitenant_test`).
+O container Docker já expõe a porta 5432 — basta criar o banco e rodar as migrations.
+
+**Setup inicial (uma única vez):**
+
+```powershell
+# 1. Certificar que o container está rodando
+pnpm db:up
+
+# 2. Criar o banco de teste e aplicar as migrations
+pnpm db:migrate:test
+```
+
+O arquivo `.env.test` já contém a URL correta:
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/saas_multitenant_test?schema=public"
+```
+
+### Rodando os testes
+
+```powershell
+# Unitários (slugify, rbac) — sem banco
+pnpm test:unit
+
+# Integração (createOrganization, requireOrgContext, organization-repo) — precisa do banco
+pnpm test:int
+
+# Apenas unitários com watch
+pnpm test:unit --watch
+```
+
+### Cobertura dos testes
+
+| Suite | Testes | O que cobre |
+|---|---|---|
+| `slugify.test.ts` | 14 | Todos os casos do utilitário: acentos, trim, colapso, truncate |
+| `rbac.test.ts` | 15 | Permissões por role (OWNER/MEMBER/VIEWER) |
+| `create-organization.int.test.ts` | 5 | Transação org+membership, slug auto, SlugConflictError |
+| `organization-repo.int.test.ts` | 5 | `findOrgsByUserId`: vazio, multi-org, isolamento por user |
+| `require-org-context.int.test.ts` | 5 | Membro → ctx completo; sem membership → 404; org inexistente → 404 |
+
+### Detalhes técnicos
+
+- **Dois configs Jest**: CJS para testes unitários (sem Prisma); ESM para integração (Prisma 7 requer WASM `.mjs`)
+- **`--experimental-vm-modules`**: injetado via `tests/scripts/run-int-tests.js`; necessário para Prisma 7
+- **`maxWorkers: 1`**: testes de integração rodam sequencialmente — banco compartilhado, sem race condition
+- **`jest.unstable_mockModule()` + dynamic import**: padrão correto para mocks em ESM (hoist estático não funciona)
+- **Banco limpo por teste**: `resetDb()` deleta todas as linhas em ordem segura (FK) antes de cada teste
+
+---
+
 ## Scripts disponíveis
 
 | Comando | O que faz |
@@ -162,10 +224,12 @@ Lança `SlugConflictError` (409) se o slug já estiver em uso.
 | `pnpm lint` | Roda ESLint |
 | `pnpm typecheck` | Verifica tipos TypeScript |
 | `pnpm format` | Formata código com Prettier |
-| `pnpm test` | Roda testes unitários (Jest) |
+| `pnpm test` / `pnpm test:unit` | Roda testes unitários (Jest CJS) |
+| `pnpm test:int` | Roda testes de integração (Jest ESM + banco) |
 | `pnpm db:up` | Sobe Postgres via Docker |
 | `pnpm db:down` | Para o Postgres |
-| `pnpm db:migrate` | Roda migrações do Prisma |
+| `pnpm db:migrate` | Roda migrações do Prisma (banco principal) |
+| `pnpm db:migrate:test` | Cria banco de teste e aplica migrations |
 | `pnpm db:generate` | Regenera o Prisma Client |
 | `pnpm db:seed` | Popula banco com dados de exemplo |
 | `pnpm db:studio` | Abre Prisma Studio (`http://localhost:5555`) |
