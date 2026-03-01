@@ -1,4 +1,5 @@
 import { requireOrgContext } from "@/server/org/require-org-context";
+import { can } from "@/security/rbac";
 import {
   Card,
   CardContent,
@@ -6,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const placeholderCards = [
   { title: "Usuários", description: "Membros ativos na organização" },
@@ -20,6 +22,9 @@ export default async function DashboardPage({
 }) {
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
+
+  const canCreateProject = can(ctx.role, "project:create");
+  const canReadAudit = can(ctx.role, "audit:read");
 
   return (
     <div className="space-y-6">
@@ -53,7 +58,34 @@ export default async function DashboardPage({
         ))}
       </div>
 
-      {/* Debug info — remover em produção */}
+      {/* Ações — hint visual de RBAC (segurança garantida server-side) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ações</CardTitle>
+          <CardDescription>
+            Ações disponíveis para o seu papel nesta organização.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          <div className="flex flex-col items-start gap-1">
+            <Button disabled={!canCreateProject}>Criar Project</Button>
+            {!canCreateProject && (
+              <p className="text-xs text-muted-foreground">Sem permissão</p>
+            )}
+          </div>
+
+          <div className="flex flex-col items-start gap-1">
+            <Button disabled={!canReadAudit} variant="outline">
+              Ver Audit Log
+            </Button>
+            {!canReadAudit && (
+              <p className="text-xs text-muted-foreground">Sem permissão</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contexto de tenant — remover em produção */}
       <Card>
         <CardHeader>
           <CardTitle>Contexto de Tenant</CardTitle>

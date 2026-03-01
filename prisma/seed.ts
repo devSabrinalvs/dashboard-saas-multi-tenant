@@ -3,10 +3,19 @@
  * Executar com: pnpm db:seed
  *
  * Cria (idempotente):
- *  - 1 usuário de teste (env: SEED_USER_EMAIL / SEED_USER_PASSWORD)
+ *  - 3 usuários de teste:
+ *      - SEED_USER_EMAIL / SEED_USER_PASSWORD  → OWNER em org-default e acme
+ *      - member@example.com / membro123        → MEMBER em acme
+ *      - viewer@example.com / viewer123        → VIEWER em acme
  *  - 2 organizações: "org-default" e "acme"
- *  - memberships OWNER nas duas orgs
  *  - 1 projeto de exemplo + 2 tasks (em org-default)
+ *
+ * Credenciais de teste (acme):
+ *  | Email                 | Senha       | Role   |
+ *  |-----------------------|-------------|--------|
+ *  | SEED_USER_EMAIL (.env)| (do .env)   | OWNER  |
+ *  | member@example.com    | membro123   | MEMBER |
+ *  | viewer@example.com    | viewer123   | VIEWER |
  */
 import "dotenv/config";
 import {
@@ -85,6 +94,44 @@ async function main() {
     create: { userId: user.id, orgId: acme.id, role: Role.OWNER },
   });
   console.log(`✓ Membership:    OWNER em ${acme.slug}`);
+
+  // ── 3c. Usuário MEMBER em acme ──────────────────────────────────────────────
+  const memberUser = await prisma.user.upsert({
+    where: { email: "member@example.com" },
+    update: { password: await bcrypt.hash("membro123", 12) },
+    create: {
+      email: "member@example.com",
+      name: "Usuário Membro",
+      password: await bcrypt.hash("membro123", 12),
+    },
+  });
+  console.log(`✓ Usuário:       ${memberUser.email} (id: ${memberUser.id})`);
+
+  await prisma.membership.upsert({
+    where: { userId_orgId: { userId: memberUser.id, orgId: acme.id } },
+    update: { role: Role.MEMBER },
+    create: { userId: memberUser.id, orgId: acme.id, role: Role.MEMBER },
+  });
+  console.log(`✓ Membership:    MEMBER em ${acme.slug}`);
+
+  // ── 3d. Usuário VIEWER em acme ──────────────────────────────────────────────
+  const viewerUser = await prisma.user.upsert({
+    where: { email: "viewer@example.com" },
+    update: { password: await bcrypt.hash("viewer123", 12) },
+    create: {
+      email: "viewer@example.com",
+      name: "Usuário Viewer",
+      password: await bcrypt.hash("viewer123", 12),
+    },
+  });
+  console.log(`✓ Usuário:       ${viewerUser.email} (id: ${viewerUser.id})`);
+
+  await prisma.membership.upsert({
+    where: { userId_orgId: { userId: viewerUser.id, orgId: acme.id } },
+    update: { role: Role.VIEWER },
+    create: { userId: viewerUser.id, orgId: acme.id, role: Role.VIEWER },
+  });
+  console.log(`✓ Membership:    VIEWER em ${acme.slug}`);
 
   // ── 4. Projeto ──────────────────────────────────────────────────────────────
   let project = await prisma.project.findFirst({

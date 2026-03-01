@@ -52,7 +52,9 @@
       "Bash(git push)",
       "Bash(pnpm exec prisma generate)",
       "Bash(pnpm exec prisma migrate dev --name multi-tenant)",
-      "Bash(pnpm db:seed)"
+      "Bash(pnpm db:seed)",
+      "Bash(pnpm add -D jest @types/jest ts-jest)",
+      "Bash(pnpm test)"
     ]
   }
 }
