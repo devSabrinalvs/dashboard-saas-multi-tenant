@@ -2,6 +2,16 @@ import { prisma } from "@/lib/prisma";
 import type { Organization } from "@/generated/prisma/client";
 
 /**
+ * Cria uma nova organização.
+ */
+export async function createOrg(
+  name: string,
+  slug: string
+): Promise<Organization> {
+  return prisma.organization.create({ data: { name, slug } });
+}
+
+/**
  * Busca uma organização pelo slug.
  * Retorna null se não existir.
  */
