@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings } from "lucide-react";
+import { LayoutDashboard, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher, type OrgLink } from "./org-switcher";
 
@@ -24,6 +24,7 @@ export function SidebarNav({ orgSlug, orgName, userOrgs }: SidebarNavProps) {
 
   const navItems: NavItem[] = [
     { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
+    { href: `${base}/team`, label: "Equipe", icon: Users },
     { href: `${base}/settings`, label: "Configurações", icon: Settings },
   ];
 
