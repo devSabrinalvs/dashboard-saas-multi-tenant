@@ -1,6 +1,6 @@
 # Dashboard SaaS Multi-tenant
 
-Etapa 5 — Organization CRUD mínimo: criação de org, OrgSwitcher e fluxo de navegação completo.
+Etapa 6 — Team: convites por link, gestão de membros, controle de roles e RBAC completo.
 
 ## Stack
 
@@ -79,6 +79,61 @@ Clique no nome da org atual para abrir o menu e navegar entre orgs ou criar uma 
 | **requireOrgContext** | Resolve org + checa membership | Server Components |
 
 > 404 em vez de 403: não expõe a existência de orgs que o usuário não acessa.
+
+---
+
+## Etapa 6 — Convites e Gestão de Membros
+
+### Fluxo de convite
+
+```
+OWNER/ADMIN → /org/[slug]/team → InviteForm
+  → POST /api/org/[slug]/invites
+  → { inviteLink: "/invite/TOKEN" }  (validade 7 dias)
+
+Convidado recebe o link → /invite/TOKEN
+  → Não logado: "Faça login para aceitar" (redireciona com callbackUrl)
+  → Logado, email errado: aviso de email incompatível
+  → Logado, email certo: botão "Aceitar convite"
+      → POST /api/invite/TOKEN/accept
+      → 200 { orgSlug } → redirect /org/[slug]/dashboard
+```
+
+### RBAC — o que cada role pode fazer
+
+| Permissão | OWNER | ADMIN | MEMBER | VIEWER |
+|---|---|---|---|---|
+| `member:invite` | ✅ | ✅ | ❌ | ❌ |
+| `member:remove` | ✅ | ✅ | ❌ | ❌ |
+| `member:role:update` | ✅ | ✅ | ❌ | ❌ |
+
+**Guards adicionais:**
+- **Último OWNER**: não é possível remover ou rebaixar o único OWNER da org (`LastOwnerError 422`)
+- **ADMIN não promove para OWNER**: apenas OWNER pode promover para OWNER (`AdminCannotPromoteError 403`)
+
+### Endpoints da API
+
+| Método | Path | Permissão | Descrição |
+|---|---|---|---|
+| `POST` | `/api/org/[orgSlug]/invites` | `member:invite` | Criar convite (retorna link) |
+| `DELETE` | `/api/org/[orgSlug]/invites/[inviteId]` | `member:invite` | Revogar convite PENDING |
+| `PATCH` | `/api/org/[orgSlug]/members/[memberId]/role` | `member:role:update` | Alterar role do membro |
+| `DELETE` | `/api/org/[orgSlug]/members/[memberId]` | `member:remove` | Remover membro |
+| `POST` | `/api/invite/[token]/accept` | Sessão ativa | Aceitar convite |
+
+### Como testar o fluxo de convite
+
+```
+1. Login como owner@example.com / senha123
+2. Navegar para /org/org-default/team
+3. No formulário "Convidar por email", digitar um email e clicar "Convidar"
+4. Copiar o link exibido
+5. Abrir em aba anônima → redireciona para login
+6. Login com o email convidado (deve existir como usuário)
+7. Após login → redirecionado para /invite/TOKEN
+8. Clicar "Aceitar convite" → redirecionado para /org/org-default/dashboard
+9. Voltar para /org/org-default/team → novo membro aparece na lista
+```
 
 ## Como testar
 
@@ -197,13 +252,28 @@ pnpm test:unit --watch
 
 ### Cobertura dos testes
 
+**Testes unitários (sem banco):**
+
 | Suite | Testes | O que cobre |
 |---|---|---|
 | `slugify.test.ts` | 14 | Todos os casos do utilitário: acentos, trim, colapso, truncate |
-| `rbac.test.ts` | 15 | Permissões por role (OWNER/MEMBER/VIEWER) |
+| `rbac.test.ts` | 15 | Permissões por role (OWNER/ADMIN/MEMBER/VIEWER) |
+| `invite.test.ts` | 8 | Zod schemas: email normalização, roles válidos, campos ausentes |
+| `last-owner-guard.int.test.ts` (guards) | 4 | Guard via DI: 2+ owners ok; 1 owner → LastOwnerError |
+
+**Testes de integração (banco Postgres):**
+
+| Suite | Testes | O que cobre |
+|---|---|---|
 | `create-organization.int.test.ts` | 5 | Transação org+membership, slug auto, SlugConflictError |
 | `organization-repo.int.test.ts` | 5 | `findOrgsByUserId`: vazio, multi-org, isolamento por user |
 | `require-org-context.int.test.ts` | 5 | Membro → ctx completo; sem membership → 404; org inexistente → 404 |
+| `create-invite.int.test.ts` | 6 | Token único, expiresAt +7d, duplicado PENDING → 409, expirado ok |
+| `revoke-invite.int.test.ts` | 4 | Revoga PENDING, proteção cross-tenant, não-PENDING → 404 |
+| `accept-invite.int.test.ts` | 7 | Happy path, email case-insensitive, email errado, expirado, revogado, idempotente |
+| `update-member-role.int.test.ts` | 7 | Role change, último owner, ADMIN→OWNER bloqueado, cross-tenant |
+| `remove-member.int.test.ts` | 6 | Remove member, último OWNER bloqueado, cross-tenant, verifica estado no DB |
+| `last-owner-guard.int.test.ts` | 2 | Guard com DB real: 2 owners ok; 1 owner → LastOwnerError |
 
 ### Detalhes técnicos
 
@@ -239,38 +309,69 @@ pnpm test:unit --watch
 ```
 src/
 ├── app/
-│   ├── (public)/login/            # Login (sem AppShell)
-│   ├── (app)/                     # Auth check — sem AppShell
-│   │   ├── dashboard/page.tsx     # Redirect legado → /org/select
+│   ├── (public)/
+│   │   ├── login/                         # Login + suporte a ?callbackUrl=
+│   │   └── invite/[token]/page.tsx        # Aceitar convite (sem AppShell)
+│   ├── (app)/                             # Auth check — sem AppShell
+│   │   ├── dashboard/page.tsx             # Redirect legado → /org/select
 │   │   └── org/
-│   │       ├── select/page.tsx    # Seletor de organização
-│   │       └── new/page.tsx       # Criação de organização
-│   ├── (tenant)/org/[orgSlug]/    # Rotas de tenant (com AppShell)
-│   │   ├── layout.tsx             # requireOrgContext + AppShell + userOrgs
+│   │       ├── select/page.tsx            # Seletor de organização
+│   │       └── new/page.tsx               # Criação de organização
+│   ├── (tenant)/org/[orgSlug]/            # Rotas de tenant (com AppShell)
+│   │   ├── layout.tsx                     # requireOrgContext + AppShell + userOrgs
 │   │   ├── dashboard/page.tsx
-│   │   └── settings/page.tsx
-│   ├── api/org/route.ts           # POST /api/org
-│   └── page.tsx                   # Redirect → /org/select ou /login
+│   │   ├── settings/page.tsx
+│   │   └── team/page.tsx                  # Membros + convites + formulário
+│   ├── api/
+│   │   ├── org/route.ts                   # POST /api/org
+│   │   ├── org/[orgSlug]/invites/
+│   │   │   ├── route.ts                   # POST (criar convite)
+│   │   │   └── [inviteId]/route.ts        # DELETE (revogar)
+│   │   ├── org/[orgSlug]/members/
+│   │   │   └── [memberId]/
+│   │   │       ├── route.ts               # DELETE (remover membro)
+│   │   │       └── role/route.ts          # PATCH (alterar role)
+│   │   └── invite/[token]/accept/route.ts # POST (aceitar convite)
+│   └── page.tsx                           # Redirect → /org/select ou /login
 ├── schemas/
-│   └── organization.ts            # createOrgFormSchema + createOrgApiSchema
+│   ├── organization.ts                    # createOrgFormSchema + createOrgApiSchema
+│   └── invite.ts                          # createInviteSchema + updateMemberRoleSchema
 ├── security/
-│   ├── permissions.ts             # Permission union type
-│   ├── rbac.ts                    # ROLE_MATRIX + can()
-│   └── assert-permission.ts       # assertPermission() + PermissionDeniedError
+│   ├── permissions.ts                     # Permission union type
+│   ├── rbac.ts                            # ROLE_MATRIX + can()
+│   └── assert-permission.ts               # assertPermission() + PermissionDeniedError
 ├── server/
-│   ├── auth/require-auth.ts       # requireAuth()
-│   ├── org/require-org-context.ts # requireOrgContext()
+│   ├── auth/require-auth.ts               # requireAuth()
+│   ├── errors/team-errors.ts              # 7 classes: InviteDuplicate, LastOwner, etc.
+│   ├── org/require-org-context.ts         # requireOrgContext()
 │   ├── repo/
-│   │   ├── organization-repo.ts   # findOrgBySlug, findOrgsByUserId, createOrg
-│   │   └── membership-repo.ts     # findMembership, createMembership
+│   │   ├── organization-repo.ts           # findOrgBySlug, findOrgsByUserId, createOrg
+│   │   ├── membership-repo.ts             # + listMemberships, countOwners, etc.
+│   │   └── invite-repo.ts                 # 7 funções: create, find, list, revoke…
 │   └── use-cases/
-│       └── create-organization.ts # createOrganization + SlugConflictError
+│       ├── _guards/last-owner-guard.ts    # Lança LastOwnerError se único OWNER
+│       ├── create-organization.ts         # createOrganization + SlugConflictError
+│       ├── create-invite.ts               # Token UUID, expiresAt +7d, guard duplicado
+│       ├── revoke-invite.ts               # PENDING → REVOKED
+│       ├── accept-invite.ts               # Verifica email, idempotente, $transaction
+│       ├── update-member-role.ts          # Guards: último OWNER, ADMIN→OWNER
+│       └── remove-member.ts              # Guard último OWNER, cross-tenant
 ├── shared/
-│   └── utils/slugify.ts           # string → url-safe slug
-├── components/layout/
-│   ├── app-shell.tsx              # Shell (recebe orgSlug + orgName + userOrgs)
-│   ├── sidebar-nav.tsx            # OrgSwitcher + links /org/[slug]/*
-│   ├── org-switcher.tsx           # Dropdown de troca de org
-│   └── topbar.tsx                 # Theme toggle + avatar dropdown
-└── middleware.ts                  # JWT check para /org/:path*
+│   └── utils/slugify.ts                   # string → url-safe slug
+├── components/
+│   ├── layout/
+│   │   ├── app-shell.tsx                  # Shell (recebe orgSlug + orgName + userOrgs)
+│   │   ├── sidebar-nav.tsx                # OrgSwitcher + links (Dashboard, Equipe, Settings)
+│   │   ├── org-switcher.tsx               # Dropdown de troca de org
+│   │   └── topbar.tsx                     # Theme toggle + avatar dropdown
+│   ├── team/
+│   │   ├── invite-form.tsx                # RHF form + link copiável
+│   │   ├── member-row-actions.tsx         # Dropdown: alterar role + remover
+│   │   └── invite-row-actions.tsx         # Botão revogar convite
+│   ├── invite/
+│   │   └── accept-invite-button.tsx       # POST accept + redirect
+│   └── ui/
+│       ├── badge.tsx                      # Role badges (OWNER, ADMIN, MEMBER, VIEWER)
+│       └── ...                            # shadcn/ui components
+└── middleware.ts                          # JWT check para /org/:path*
 ```
