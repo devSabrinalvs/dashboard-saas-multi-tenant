@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+import { requireOrgContext } from "@/server/org/require-org-context";
+import {
+  assertPermission,
+  PermissionDeniedError,
+} from "@/security/assert-permission";
+import { createInviteSchema } from "@/schemas/invite";
+import { createInvite } from "@/server/use-cases/create-invite";
+import { InviteDuplicateError } from "@/server/errors/team-errors";
+
+/**
+ * POST /api/org/[orgSlug]/invites
+ * Body: { email: string }
+ * Success: 201 { inviteId, inviteLink, expiresAt }
+ */
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ orgSlug: string }> }
+) {
+  try {
+    const { orgSlug } = await params;
+    const ctx = await requireOrgContext(orgSlug);
+    assertPermission(ctx, "member:invite");
+
+    const body = (await req.json()) as unknown;
+    const parsed = createInviteSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dados inválidos", issues: parsed.error.issues },
+        { status: 422 }
+      );
+    }
+
+    const result = await createInvite(ctx, parsed.data.email);
+
+    return NextResponse.json(result, { status: 201 });
+  } catch (err) {
+    if (err instanceof PermissionDeniedError) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    if (err instanceof InviteDuplicateError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
+    }
+    throw err;
+  }
+}

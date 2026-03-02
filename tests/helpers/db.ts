@@ -7,8 +7,9 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { Role } from "@/generated/prisma/enums";
+import { InviteStatus, Role } from "@/generated/prisma/enums";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 
 // ---------------------------------------------------------------------------
 // Cliente Prisma de testes
@@ -90,4 +91,37 @@ export async function createOrgWithMembership(
     data: { userId, orgId: org.id, role },
   });
   return { id: org.id, slug: org.slug, name: org.name };
+}
+
+export interface TestInvite {
+  id: string;
+  token: string;
+  email: string;
+  orgId: string;
+}
+
+/**
+ * Cria um convite no banco de testes.
+ * Por padrão: PENDING, expira em 7 dias.
+ */
+export async function createTestInvite(
+  orgId: string,
+  email: string,
+  overrides: {
+    status?: InviteStatus;
+    expiresAt?: Date;
+    token?: string;
+  } = {}
+): Promise<TestInvite> {
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const invite = await testPrisma.invite.create({
+    data: {
+      orgId,
+      email,
+      token: overrides.token ?? randomUUID(),
+      status: overrides.status ?? InviteStatus.PENDING,
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + SEVEN_DAYS_MS),
+    },
+  });
+  return { id: invite.id, token: invite.token, email: invite.email, orgId: invite.orgId };
 }
