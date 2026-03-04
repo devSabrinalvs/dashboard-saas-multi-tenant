@@ -4,15 +4,47 @@ import {
   assertPermission,
   PermissionDeniedError,
 } from "@/security/assert-permission";
+import { projectCreateSchema, projectQuerySchema } from "@/schemas/project";
+import { listProjects } from "@/server/use-cases/list-projects";
+import { createProject } from "@/server/use-cases/create-project";
+
+/**
+ * GET /api/org/[orgSlug]/projects?search=&page=&pageSize=
+ */
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ orgSlug: string }> }
+) {
+  try {
+    const { orgSlug } = await params;
+    const ctx = await requireOrgContext(orgSlug);
+
+    const { searchParams } = new URL(req.url);
+    const parsed = projectQuerySchema.safeParse({
+      search: searchParams.get("search") ?? undefined,
+      page: searchParams.get("page") ?? undefined,
+      pageSize: searchParams.get("pageSize") ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Parâmetros inválidos", issues: parsed.error.issues },
+        { status: 422 }
+      );
+    }
+
+    const result = await listProjects(ctx, parsed.data);
+    return NextResponse.json(result);
+  } catch (err) {
+    throw err;
+  }
+}
 
 /**
  * POST /api/org/[orgSlug]/projects
- *
- * Stub de criação de projeto — valida RBAC (project:create).
- * Sem persistência real; implementação completa na Etapa 7.
  */
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ orgSlug: string }> }
 ) {
   try {
@@ -20,13 +52,21 @@ export async function POST(
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "project:create");
 
-    return NextResponse.json({ ok: true });
+    const body = (await req.json()) as unknown;
+    const parsed = projectCreateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dados inválidos", issues: parsed.error.issues },
+        { status: 422 }
+      );
+    }
+
+    const project = await createProject(ctx, parsed.data);
+    return NextResponse.json({ project }, { status: 201 });
   } catch (err) {
     if (err instanceof PermissionDeniedError) {
-      return NextResponse.json(
-        { error: "Forbidden", message: err.message },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: err.message }, { status: 403 });
     }
     throw err;
   }

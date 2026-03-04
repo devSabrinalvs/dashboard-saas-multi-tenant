@@ -7,7 +7,7 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { InviteStatus, Role } from "@/generated/prisma/enums";
+import { InviteStatus, Role, TaskStatus } from "@/generated/prisma/enums";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
@@ -104,6 +104,77 @@ export interface TestInvite {
  * Cria um convite no banco de testes.
  * Por padrão: PENDING, expira em 7 dias.
  */
+export interface TestProject {
+  id: string;
+  orgId: string;
+  name: string;
+  description: string | null;
+}
+
+/**
+ * Cria um projeto no banco de testes.
+ */
+export async function createTestProject(
+  orgId: string,
+  overrides: { name?: string; description?: string } = {}
+): Promise<TestProject> {
+  const project = await testPrisma.project.create({
+    data: {
+      orgId,
+      name: overrides.name ?? `Projeto ${randomUUID().slice(0, 8)}`,
+      description: overrides.description ?? null,
+    },
+  });
+  return {
+    id: project.id,
+    orgId: project.orgId,
+    name: project.name,
+    description: project.description,
+  };
+}
+
+export interface TestTask {
+  id: string;
+  orgId: string;
+  projectId: string;
+  title: string;
+  status: TaskStatus;
+  tags: string[];
+}
+
+/**
+ * Cria uma tarefa no banco de testes.
+ */
+export async function createTestTask(
+  orgId: string,
+  projectId: string,
+  overrides: {
+    title?: string;
+    description?: string;
+    status?: TaskStatus;
+    tags?: string[];
+  } = {}
+): Promise<TestTask> {
+  const task = await testPrisma.task.create({
+    data: {
+      orgId,
+      projectId,
+      title: overrides.title ?? `Tarefa ${randomUUID().slice(0, 8)}`,
+      description: overrides.description ?? null,
+      status: overrides.status ?? TaskStatus.TODO,
+      tags: overrides.tags ?? [],
+    },
+  });
+  return {
+    id: task.id,
+    orgId: task.orgId,
+    projectId: task.projectId,
+    title: task.title,
+    status: task.status,
+    tags: task.tags,
+  };
+}
+
 export async function createTestInvite(
   orgId: string,
   email: string,

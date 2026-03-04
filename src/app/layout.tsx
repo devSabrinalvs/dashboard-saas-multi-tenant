@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SessionProvider } from "@/components/session-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Dashboard SaaS",
-  description: "Etapa 1.5 — UI Foundation",
+  description: "Etapa 7 — Projects + Tasks",
 };
 
 export default function RootLayout({
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider>
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <Providers>{children}</Providers>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>
