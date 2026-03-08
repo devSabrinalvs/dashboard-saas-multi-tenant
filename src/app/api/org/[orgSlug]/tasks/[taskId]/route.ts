@@ -9,6 +9,9 @@ import { updateTask } from "@/server/use-cases/update-task";
 import { deleteTask } from "@/server/use-cases/delete-task";
 import { TaskNotFoundError } from "@/server/errors/project-errors";
 import type { TaskStatus } from "@/generated/prisma/enums";
+import { rateLimit } from "@/security/rate-limit/rate-limit";
+import { mutationKey } from "@/security/rate-limit/keys";
+import { RATE_LIMITS } from "@/security/rate-limit/constants";
 
 /**
  * PATCH /api/org/[orgSlug]/tasks/[taskId]
@@ -21,6 +24,14 @@ export async function PATCH(
     const { orgSlug, taskId } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "task:update");
+
+    const rl = await rateLimit(mutationKey(ctx.orgId, ctx.userId), RATE_LIMITS.MUTATIONS);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     const body = (await req.json()) as unknown;
     const parsed = taskUpdateSchema.safeParse(body);
@@ -59,6 +70,14 @@ export async function DELETE(
     const { orgSlug, taskId } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "task:delete");
+
+    const rl = await rateLimit(mutationKey(ctx.orgId, ctx.userId), RATE_LIMITS.MUTATIONS);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     await deleteTask(ctx, taskId);
     return NextResponse.json({ ok: true });
