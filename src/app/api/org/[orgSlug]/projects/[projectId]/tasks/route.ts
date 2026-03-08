@@ -9,6 +9,9 @@ import { listTasksByProject } from "@/server/use-cases/list-tasks";
 import { createTask } from "@/server/use-cases/create-task";
 import { ProjectNotFoundError } from "@/server/errors/project-errors";
 import type { TaskStatus } from "@/generated/prisma/enums";
+import { rateLimit } from "@/security/rate-limit/rate-limit";
+import { mutationKey } from "@/security/rate-limit/keys";
+import { RATE_LIMITS } from "@/security/rate-limit/constants";
 
 /**
  * GET /api/org/[orgSlug]/projects/[projectId]/tasks
@@ -61,6 +64,14 @@ export async function POST(
     const { orgSlug, projectId } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "task:create");
+
+    const rl = await rateLimit(mutationKey(ctx.orgId, ctx.userId), RATE_LIMITS.MUTATIONS);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     const body = (await req.json()) as unknown;
     const parsed = taskCreateSchema.safeParse(body);

@@ -7,6 +7,9 @@ import {
 import { projectCreateSchema, projectQuerySchema } from "@/schemas/project";
 import { listProjects } from "@/server/use-cases/list-projects";
 import { createProject } from "@/server/use-cases/create-project";
+import { rateLimit } from "@/security/rate-limit/rate-limit";
+import { mutationKey } from "@/security/rate-limit/keys";
+import { RATE_LIMITS } from "@/security/rate-limit/constants";
 
 /**
  * GET /api/org/[orgSlug]/projects?search=&page=&pageSize=
@@ -51,6 +54,14 @@ export async function POST(
     const { orgSlug } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "project:create");
+
+    const rl = await rateLimit(mutationKey(ctx.orgId, ctx.userId), RATE_LIMITS.MUTATIONS);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     const body = (await req.json()) as unknown;
     const parsed = projectCreateSchema.safeParse(body);

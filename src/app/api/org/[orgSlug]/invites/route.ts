@@ -7,6 +7,9 @@ import {
 import { createInviteSchema } from "@/schemas/invite";
 import { createInvite } from "@/server/use-cases/create-invite";
 import { InviteDuplicateError } from "@/server/errors/team-errors";
+import { rateLimit } from "@/security/rate-limit/rate-limit";
+import { inviteKey } from "@/security/rate-limit/keys";
+import { RATE_LIMITS } from "@/security/rate-limit/constants";
 
 /**
  * POST /api/org/[orgSlug]/invites
@@ -21,6 +24,14 @@ export async function POST(
     const { orgSlug } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "member:invite");
+
+    const rl = await rateLimit(inviteKey(ctx.orgId, ctx.userId), RATE_LIMITS.INVITE);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     const body = (await req.json()) as unknown;
     const parsed = createInviteSchema.safeParse(body);

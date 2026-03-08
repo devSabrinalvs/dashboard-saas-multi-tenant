@@ -9,6 +9,9 @@ import { getProject } from "@/server/use-cases/get-project";
 import { updateProject } from "@/server/use-cases/update-project";
 import { deleteProject } from "@/server/use-cases/delete-project";
 import { ProjectNotFoundError } from "@/server/errors/project-errors";
+import { rateLimit } from "@/security/rate-limit/rate-limit";
+import { mutationKey } from "@/security/rate-limit/keys";
+import { RATE_LIMITS } from "@/security/rate-limit/constants";
 
 /**
  * GET /api/org/[orgSlug]/projects/[projectId]
@@ -41,6 +44,14 @@ export async function PATCH(
     const { orgSlug, projectId } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "project:update");
+
+    const rl = await rateLimit(mutationKey(ctx.orgId, ctx.userId), RATE_LIMITS.MUTATIONS);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     const body = (await req.json()) as unknown;
     const parsed = projectUpdateSchema.safeParse(body);
@@ -76,6 +87,14 @@ export async function DELETE(
     const { orgSlug, projectId } = await params;
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "project:delete");
+
+    const rl = await rateLimit(mutationKey(ctx.orgId, ctx.userId), RATE_LIMITS.MUTATIONS);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente mais tarde.", resetAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
 
     await deleteProject(ctx, projectId);
     return NextResponse.json({ ok: true });
