@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  ci:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: saas_multitenant_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/saas_multitenant_test?schema=public
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: http://localhost:3000
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Toolchain ───────────────────────────────────────────────────────────
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # ── Dependencies ─────────────────────────────────────────────────────────
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Lint + TypeCheck ────────────────────────────────────────────────────
+      - name: Lint
+        run: pnpm lint
+
+      - name: TypeCheck
+        run: pnpm typecheck
+
+      # ── Unit + UI tests (sem banco) ─────────────────────────────────────────
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: UI tests (RTL)
+        run: pnpm test:ui
+
+      # ── Migrations ──────────────────────────────────────────────────────────
+      - name: Run database migrations
+        run: pnpm exec prisma migrate deploy
+
+      # ── Integration tests (com banco) ───────────────────────────────────────
+      - name: Integration tests
+        run: pnpm test:int
+
+      # ── E2E (Playwright) ────────────────────────────────────────────────────
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      # ── Artifacts on failure ─────────────────────────────────────────────────
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
