@@ -1,6 +1,6 @@
 # Dashboard SaaS Multi-tenant
 
-Etapa 6 — Team: convites por link, gestão de membros, controle de roles e RBAC completo.
+Etapas 1-10 — SaaS multi-tenant completo: autenticação, organizações, RBAC, convites, projetos/tarefas, rate limit e security headers.
 
 ## Stack
 
@@ -212,76 +212,126 @@ Lança `SlugConflictError` (409) se o slug já estiver em uso.
 
 ### Estrutura
 
-| Tipo | Arquivo | Ferramenta |
-|---|---|---|
-| Unitário | `src/**/__tests__/*.test.ts` | Jest CJS + ts-jest |
-| Integração (DB) | `src/**/__tests__/*.int.test.ts` | Jest ESM (`--experimental-vm-modules`) |
+| Tipo | Arquivo | Ferramenta | Banco? |
+|---|---|---|---|
+| Unitário | `src/**/__tests__/*.test.ts` | Jest CJS + ts-jest | ❌ |
+| UI (componentes) | `src/**/__tests__/*.ui.test.tsx` | Jest + jsdom + RTL + MSW | ❌ |
+| Integração (DB) | `src/**/__tests__/*.int.test.ts` | Jest ESM + Prisma | ✅ |
+| E2E | `e2e/specs/*.spec.ts` | Playwright | ✅ (app rodando) |
 
 ### Banco de dados de teste
 
-Os testes de integração usam um banco Postgres separado (`saas_multitenant_test`).
-O container Docker já expõe a porta 5432 — basta criar o banco e rodar as migrations.
+Os testes de integração e E2E usam um banco Postgres separado (`saas_multitenant_test`).
 
 **Setup inicial (uma única vez):**
 
-```powershell
-# 1. Certificar que o container está rodando
+```bash
+# 1. Subir Postgres via Docker
 pnpm db:up
 
-# 2. Criar o banco de teste e aplicar as migrations
+# 2. Criar banco de teste e aplicar migrations
 pnpm db:migrate:test
 ```
 
-O arquivo `.env.test` já contém a URL correta:
+O arquivo `.env.test` contém a URL do banco de teste:
 ```
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/saas_multitenant_test?schema=public"
 ```
 
-### Rodando os testes
+### Rodando cada camada
 
-```powershell
-# Unitários (slugify, rbac) — sem banco
+```bash
+# ── Unitários (slugify, rbac, schemas, rate-limit) — sem banco ──────────────
 pnpm test:unit
 
-# Integração (createOrganization, requireOrgContext, organization-repo) — precisa do banco
+# ── UI (ProjectsClient, InviteForm via RTL + MSW) — sem banco ───────────────
+pnpm test:ui
+
+# ── Integração (use-cases com banco Postgres) ────────────────────────────────
 pnpm test:int
 
-# Apenas unitários com watch
-pnpm test:unit --watch
+# ── E2E (Playwright — exige app rodando) ────────────────────────────────────
+# 1. Em um terminal separado, rodar o app com o banco de teste:
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/saas_multitenant_test?schema=public" pnpm dev
+
+# 2. Em outro terminal:
+pnpm test:e2e
+
+# Modo UI interativo do Playwright:
+pnpm test:e2e:ui
 ```
 
 ### Cobertura dos testes
 
-**Testes unitários (sem banco):**
+**Unitários (sem banco):**
 
 | Suite | Testes | O que cobre |
 |---|---|---|
-| `slugify.test.ts` | 14 | Todos os casos do utilitário: acentos, trim, colapso, truncate |
+| `slugify.test.ts` | 14 | Acentos, trim, colapso, truncate |
 | `rbac.test.ts` | 15 | Permissões por role (OWNER/ADMIN/MEMBER/VIEWER) |
-| `invite.test.ts` | 8 | Zod schemas: email normalização, roles válidos, campos ausentes |
-| `last-owner-guard.int.test.ts` (guards) | 4 | Guard via DI: 2+ owners ok; 1 owner → LastOwnerError |
+| `invite.test.ts` | 8 | Zod schemas: email, roles, campos ausentes |
+| `rate-limit.test.ts` | 10 | memoryStore: first req, burst, reset janela, keys, getClientIp |
 
-**Testes de integração (banco Postgres):**
+**UI (jsdom + RTL + MSW):**
+
+| Suite | Testes | O que cobre |
+|---|---|---|
+| `projects-client.ui.test.tsx` | 8 | Lista projetos, empty state, erro 500, botão visível/oculto por permissão |
+| `invite-form.ui.test.tsx` | 6 | Render, submit OK, 409, 429, email inválido, "Enviando…" |
+
+**Integração (banco Postgres):**
 
 | Suite | Testes | O que cobre |
 |---|---|---|
 | `create-organization.int.test.ts` | 5 | Transação org+membership, slug auto, SlugConflictError |
-| `organization-repo.int.test.ts` | 5 | `findOrgsByUserId`: vazio, multi-org, isolamento por user |
-| `require-org-context.int.test.ts` | 5 | Membro → ctx completo; sem membership → 404; org inexistente → 404 |
-| `create-invite.int.test.ts` | 6 | Token único, expiresAt +7d, duplicado PENDING → 409, expirado ok |
-| `revoke-invite.int.test.ts` | 4 | Revoga PENDING, proteção cross-tenant, não-PENDING → 404 |
-| `accept-invite.int.test.ts` | 7 | Happy path, email case-insensitive, email errado, expirado, revogado, idempotente |
-| `update-member-role.int.test.ts` | 7 | Role change, último owner, ADMIN→OWNER bloqueado, cross-tenant |
-| `remove-member.int.test.ts` | 6 | Remove member, último OWNER bloqueado, cross-tenant, verifica estado no DB |
-| `last-owner-guard.int.test.ts` | 2 | Guard com DB real: 2 owners ok; 1 owner → LastOwnerError |
+| `organization-repo.int.test.ts` | 5 | `findOrgsByUserId`: vazio, multi-org, isolamento |
+| `require-org-context.int.test.ts` | 5 | Membro → ctx; sem membership → 404; org inexistente → 404 |
+| `create-invite.int.test.ts` | 6 | Token único, expiresAt +7d, duplicado PENDING → 409 |
+| `revoke-invite.int.test.ts` | 4 | Revoga PENDING, cross-tenant, não-PENDING → 404 |
+| `accept-invite.int.test.ts` | 7 | Happy path, email case-insensitive, expirado, idempotente |
+| `update-member-role.int.test.ts` | 7 | Role change, último owner, ADMIN→OWNER bloqueado |
+| `remove-member.int.test.ts` | 6 | Remove membro, último OWNER bloqueado, cross-tenant |
+| `tenant-isolation.int.test.ts` | 6 | Cross-tenant: getProject, deleteProject, listProjects, tasks, auditLogs |
+| `permissions.int.test.ts` | 7 | VIEWER bloqueado, MEMBER autorizado, AuditLog criado, rate limit DB |
+| `rate-limit.int.test.ts` | 6 | prismaStore: persiste no DB, janela expira, reset via update |
+
+**E2E (Playwright):**
+
+| Spec | Testes | O que cobre |
+|---|---|---|
+| `auth.spec.ts` | 4 | Login válido → dashboard, credenciais inválidas, viewer login, rota protegida |
+| `projects.spec.ts` | 5 | Lista projetos, botão novo (OWNER), criar projeto, busca, criar task + filtro |
+| `team.spec.ts` | 5 | OWNER vê membros e InviteForm; VIEWER não vê InviteForm nem botão de projeto |
+| `tenant-isolation.spec.ts` | 4 | Org inexistente → 404, owner acessa org-b, projetos de org-a não aparecem em org-b |
+
+### Dicas de debug — E2E
+
+```bash
+# Rodar um spec específico
+pnpm test:e2e -- e2e/specs/auth.spec.ts
+
+# Modo headed (abre o browser)
+pnpm test:e2e -- --headed
+
+# UI interativo com timeline de ações
+pnpm test:e2e:ui
+
+# Ver trace de uma falha (arquivo gerado em test-results/)
+npx playwright show-trace test-results/<pasta>/trace.zip
+
+# Resetar auth state (apaga cookies salvos)
+rm -rf e2e/.auth
+```
 
 ### Detalhes técnicos
 
-- **Dois configs Jest**: CJS para testes unitários (sem Prisma); ESM para integração (Prisma 7 requer WASM `.mjs`)
-- **`--experimental-vm-modules`**: injetado via `tests/scripts/run-int-tests.js`; necessário para Prisma 7
-- **`maxWorkers: 1`**: testes de integração rodam sequencialmente — banco compartilhado, sem race condition
-- **`jest.unstable_mockModule()` + dynamic import**: padrão correto para mocks em ESM (hoist estático não funciona)
-- **Banco limpo por teste**: `resetDb()` deleta todas as linhas em ordem segura (FK) antes de cada teste
+- **Jest CJS** (`jest.config.js`): testes unitários e UI — sem Prisma, sem ESM
+- **Jest ESM** (`--experimental-vm-modules`): integração via `tests/scripts/run-int-tests.js`
+- **jest-environment-jsdom** (`jest.config.ui.js`): UI tests com RTL + MSW v2 (`msw/node`)
+- **`maxWorkers: 1`**: integração roda sequencialmente — banco compartilhado
+- **`resetDb()`**: limpa todas as tabelas em ordem FK-safe antes de cada teste de integração
+- **Playwright `storageState`**: `e2e/fixtures/auth.setup.ts` salva cookies de owner e viewer; specs usam sessão pré-autenticada
+- **`globalSetup`**: `e2e/global-setup.ts` faz seed do banco E2E antes dos specs rodarem
 
 ---
 
@@ -295,7 +345,10 @@ pnpm test:unit --watch
 | `pnpm typecheck` | Verifica tipos TypeScript |
 | `pnpm format` | Formata código com Prettier |
 | `pnpm test` / `pnpm test:unit` | Roda testes unitários (Jest CJS) |
+| `pnpm test:ui` | Roda testes de UI (RTL + MSW, sem banco) |
 | `pnpm test:int` | Roda testes de integração (Jest ESM + banco) |
+| `pnpm test:e2e` | Roda testes E2E (Playwright — app deve estar rodando) |
+| `pnpm test:e2e:ui` | Abre o Playwright UI interativo |
 | `pnpm db:up` | Sobe Postgres via Docker |
 | `pnpm db:down` | Para o Postgres |
 | `pnpm db:migrate` | Roda migrações do Prisma (banco principal) |

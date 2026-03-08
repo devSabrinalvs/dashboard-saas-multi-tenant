@@ -72,6 +72,7 @@ export function InviteForm({ orgSlug }: InviteFormProps) {
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex gap-2 items-start"
+        data-testid="invite-form"
       >
         <div className="flex-1 space-y-1">
           <Label htmlFor="invite-email" className="sr-only">
@@ -87,7 +88,7 @@ export function InviteForm({ orgSlug }: InviteFormProps) {
             <p className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
-        <Button type="submit" disabled={isSubmitting} size="sm">
+        <Button type="submit" disabled={isSubmitting} size="sm" data-testid="invite-submit-btn">
           {isSubmitting ? "Enviando…" : "Convidar"}
         </Button>
       </form>
