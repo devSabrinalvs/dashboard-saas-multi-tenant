@@ -1,6 +1,6 @@
 # Dashboard SaaS Multi-tenant
 
-Etapas 1-10 — SaaS multi-tenant completo: autenticação, organizações, RBAC, convites, projetos/tarefas, rate limit e security headers.
+Etapas 1-11 — SaaS multi-tenant completo: autenticação, organizações, RBAC, convites, projetos/tarefas, rate limit, security headers e CI com GitHub Actions.
 
 ## Stack
 
@@ -332,6 +332,64 @@ rm -rf e2e/.auth
 - **`resetDb()`**: limpa todas as tabelas em ordem FK-safe antes de cada teste de integração
 - **Playwright `storageState`**: `e2e/fixtures/auth.setup.ts` salva cookies de owner e viewer; specs usam sessão pré-autenticada
 - **`globalSetup`**: `e2e/global-setup.ts` faz seed do banco E2E antes dos specs rodarem
+
+---
+
+## CI — GitHub Actions
+
+O workflow `.github/workflows/ci.yml` roda automaticamente em push e pull request para `master`/`main`.
+
+### Pipeline
+
+```
+install → lint → typecheck → test:unit → test:ui → migrate → test:int → e2e
+```
+
+| Step | Descrição |
+|---|---|
+| **install** | `pnpm install --frozen-lockfile` com cache do lockfile |
+| **lint** | ESLint em `src/` |
+| **typecheck** | `tsc --noEmit` |
+| **unit tests** | Jest CJS — unitários sem banco |
+| **UI tests** | Jest jsdom + RTL — componentes sem banco |
+| **migrate** | `prisma migrate deploy` no Postgres do serviço |
+| **integration tests** | Jest ESM + Prisma — com banco Postgres |
+| **e2e** | Playwright (Chromium) — inicia `pnpm dev` automaticamente |
+
+### Serviço Postgres
+
+O workflow usa um container `postgres:16` via GitHub Actions `services`. Aguarda health check (`pg_isready`) antes de executar os steps.
+
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/saas_multitenant_test?schema=public
+```
+
+### Variáveis de ambiente (GitHub Secrets)
+
+| Secret | Como configurar |
+|---|---|
+| `NEXTAUTH_SECRET` | Repositório → Settings → Secrets → Actions → New secret |
+
+O `NEXTAUTH_URL` é definido como `http://localhost:3000` diretamente no workflow.
+
+### Artefatos de falha
+
+Em caso de falha nos testes E2E, os seguintes artefatos são enviados (retenção 7 dias):
+- `playwright-report/` — relatório HTML
+- `test-results/` — traces, screenshots e vídeos
+
+### Rodar localmente o mesmo pipeline
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:ui
+pnpm db:migrate:test   # aplica migrations no banco de teste local
+pnpm test:int
+DATABASE_URL="..." pnpm dev &   # em outro terminal
+pnpm test:e2e
+```
 
 ---
 
