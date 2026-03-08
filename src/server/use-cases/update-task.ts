@@ -2,6 +2,7 @@ import type { OrgContext } from "@/server/org/require-org-context";
 import { findTaskById, updateTask as repoUpdateTask, type Task } from "@/server/repo/task-repo";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { TaskNotFoundError } from "@/server/errors/project-errors";
+import { logAudit } from "@/server/audit/log-audit";
 
 export type UpdateTaskData = {
   title?: string;
@@ -27,7 +28,12 @@ export async function updateTask(
 
   const task = await repoUpdateTask(taskId, data);
 
-  // TODO(Etapa 8 - Audit): log("task.updated", { orgId: ctx.orgId, taskId, actorId: ctx.userId })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "task.updated",
+    metadata: { taskId, changes: data },
+  });
 
   return task;
 }

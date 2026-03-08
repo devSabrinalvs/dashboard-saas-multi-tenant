@@ -1,6 +1,7 @@
 import type { OrgContext } from "@/server/org/require-org-context";
 import { findTaskById, deleteTask as repoDeleteTask, type Task } from "@/server/repo/task-repo";
 import { TaskNotFoundError } from "@/server/errors/project-errors";
+import { logAudit } from "@/server/audit/log-audit";
 
 /**
  * Deleta uma task verificando pertencimento à org.
@@ -18,7 +19,12 @@ export async function deleteTask(
 
   const deleted = await repoDeleteTask(taskId);
 
-  // TODO(Etapa 8 - Audit): log("task.deleted", { orgId: ctx.orgId, taskId, actorId: ctx.userId })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "task.deleted",
+    metadata: { taskId, projectId: deleted.projectId },
+  });
 
   return deleted;
 }

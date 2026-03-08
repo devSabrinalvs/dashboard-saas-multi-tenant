@@ -1,6 +1,7 @@
 import type { OrgContext } from "@/server/org/require-org-context";
 import { deleteProject as repoDeleteProject, type Project } from "@/server/repo/project-repo";
 import { getProject } from "./get-project";
+import { logAudit } from "@/server/audit/log-audit";
 
 /**
  * Deleta um projeto (hard delete).
@@ -19,7 +20,12 @@ export async function deleteProject(
 
   const deleted = await repoDeleteProject(projectId);
 
-  // TODO(Etapa 8 - Audit): log("project.deleted", { orgId: ctx.orgId, projectId, actorId: ctx.userId })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "project.deleted",
+    metadata: { projectId, name: deleted.name },
+  });
 
   return deleted;
 }

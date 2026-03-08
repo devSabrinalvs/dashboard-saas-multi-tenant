@@ -1,5 +1,6 @@
 import type { OrgContext } from "@/server/org/require-org-context";
 import { createProject as repoCreateProject, type Project } from "@/server/repo/project-repo";
+import { logAudit } from "@/server/audit/log-audit";
 
 export type CreateProjectData = {
   name: string;
@@ -21,7 +22,12 @@ export async function createProject(
     description: data.description,
   });
 
-  // TODO(Etapa 8 - Audit): log("project.created", { orgId: ctx.orgId, projectId: project.id, actorId: ctx.userId })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "project.created",
+    metadata: { projectId: project.id, name: project.name },
+  });
 
   return project;
 }

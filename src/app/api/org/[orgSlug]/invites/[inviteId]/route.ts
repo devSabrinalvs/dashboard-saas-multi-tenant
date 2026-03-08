@@ -20,7 +20,7 @@ export async function DELETE(
     const ctx = await requireOrgContext(orgSlug);
     assertPermission(ctx, "member:invite");
 
-    await revokeInvite({ orgId: ctx.orgId, inviteId });
+    await revokeInvite({ orgId: ctx.orgId, inviteId, actorUserId: ctx.userId });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

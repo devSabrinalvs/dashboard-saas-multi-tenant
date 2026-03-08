@@ -5,6 +5,7 @@ import {
 import { lastOwnerGuard } from "@/server/use-cases/_guards/last-owner-guard";
 import { MemberNotFoundError } from "@/server/errors/team-errors";
 import type { OrgContext } from "@/server/org/require-org-context";
+import { logAudit } from "@/server/audit/log-audit";
 
 interface RemoveMemberInput {
   orgId: string;
@@ -22,6 +23,7 @@ interface RemoveMemberInput {
  */
 export async function removeMember({
   orgId,
+  actorCtx,
   targetMemberId,
 }: RemoveMemberInput): Promise<void> {
   const membership = await findMembershipById(targetMemberId);
@@ -37,5 +39,10 @@ export async function removeMember({
 
   await deleteMembership(targetMemberId);
 
-  // TODO(Etapa 8 - Audit): log("member.removed", { orgId, actorId: actorCtx.userId, targetMemberId, targetRole: membership.role })
+  void logAudit({
+    orgId,
+    actorUserId: actorCtx.userId,
+    action: "member.removed",
+    metadata: { targetMemberId, role: membership.role },
+  });
 }

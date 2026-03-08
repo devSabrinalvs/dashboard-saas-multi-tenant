@@ -1,6 +1,7 @@
 import { requireOrgContext } from "@/server/org/require-org-context";
 import { findOrgsByUserId } from "@/server/repo/organization-repo";
 import { AppShell } from "@/components/layout/app-shell";
+import { can } from "@/security/rbac";
 
 export default async function TenantLayout({
   children,
@@ -12,6 +13,7 @@ export default async function TenantLayout({
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
   const userOrgs = await findOrgsByUserId(ctx.userId);
+  const canAudit = can(ctx.role, "audit:read");
 
   return (
     <AppShell
@@ -19,6 +21,7 @@ export default async function TenantLayout({
       orgSlug={ctx.orgSlug}
       orgName={ctx.orgName}
       userOrgs={userOrgs}
+      canAudit={canAudit}
     >
       {children}
     </AppShell>

@@ -3,10 +3,12 @@ import {
   revokeInvite as repoRevokeInvite,
 } from "@/server/repo/invite-repo";
 import { InviteNotFoundError } from "@/server/errors/team-errors";
+import { logAudit } from "@/server/audit/log-audit";
 
 interface RevokeInviteInput {
   orgId: string;
   inviteId: string;
+  actorUserId: string;
 }
 
 /**
@@ -19,6 +21,7 @@ interface RevokeInviteInput {
 export async function revokeInvite({
   orgId,
   inviteId,
+  actorUserId,
 }: RevokeInviteInput): Promise<void> {
   const invite = await findInviteById(inviteId, orgId);
 
@@ -32,5 +35,10 @@ export async function revokeInvite({
 
   await repoRevokeInvite(inviteId);
 
-  // TODO(Etapa 8 - Audit): log("invite.revoked", { orgId, inviteId, revokedBy: actorUserId })
+  void logAudit({
+    orgId,
+    actorUserId,
+    action: "invite.revoked",
+    metadata: { inviteId },
+  });
 }

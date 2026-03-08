@@ -2,6 +2,7 @@ import type { OrgContext } from "@/server/org/require-org-context";
 import { createTask as repoCreateTask, type Task } from "@/server/repo/task-repo";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { getProject } from "./get-project";
+import { logAudit } from "@/server/audit/log-audit";
 
 export type CreateTaskData = {
   title: string;
@@ -35,7 +36,12 @@ export async function createTask(
     tags: data.tags,
   });
 
-  // TODO(Etapa 8 - Audit): log("task.created", { orgId: ctx.orgId, projectId, taskId: task.id, actorId: ctx.userId })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "task.created",
+    metadata: { taskId: task.id, projectId, title: task.title },
+  });
 
   return task;
 }

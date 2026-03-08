@@ -27,7 +27,7 @@ describe("revokeInvite()", () => {
     const org = await createOrgWithMembership(user.id, "org-revoke");
     const invite = await createTestInvite(org.id, "convidado@test.com");
 
-    await revokeInvite({ orgId: org.id, inviteId: invite.id });
+    await revokeInvite({ orgId: org.id, inviteId: invite.id, actorUserId: user.id });
 
     const updated = await testPrisma.invite.findUnique({
       where: { id: invite.id },
@@ -40,7 +40,7 @@ describe("revokeInvite()", () => {
     const org = await createOrgWithMembership(user.id, "org-revoke2");
 
     await expect(
-      revokeInvite({ orgId: org.id, inviteId: "id-inexistente" })
+      revokeInvite({ orgId: org.id, inviteId: "id-inexistente", actorUserId: user.id })
     ).rejects.toBeInstanceOf(InviteNotFoundError);
   });
 
@@ -52,7 +52,7 @@ describe("revokeInvite()", () => {
     const invite = await createTestInvite(org1.id, "convidado@test.com");
 
     await expect(
-      revokeInvite({ orgId: org2.id, inviteId: invite.id })
+      revokeInvite({ orgId: org2.id, inviteId: invite.id, actorUserId: user.id })
     ).rejects.toBeInstanceOf(InviteNotFoundError);
   });
 
@@ -64,7 +64,7 @@ describe("revokeInvite()", () => {
     });
 
     await expect(
-      revokeInvite({ orgId: org.id, inviteId: invite.id })
+      revokeInvite({ orgId: org.id, inviteId: invite.id, actorUserId: user.id })
     ).rejects.toBeInstanceOf(InviteNotFoundError);
   });
 });

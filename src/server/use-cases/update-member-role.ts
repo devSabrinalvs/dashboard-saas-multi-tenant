@@ -9,6 +9,7 @@ import {
 } from "@/server/errors/team-errors";
 import type { OrgContext } from "@/server/org/require-org-context";
 import type { Role } from "@/generated/prisma/enums";
+import { logAudit } from "@/server/audit/log-audit";
 
 interface UpdateMemberRoleInput {
   orgId: string;
@@ -50,5 +51,10 @@ export async function updateMemberRole({
 
   await updateMembershipRole(targetMemberId, newRole);
 
-  // TODO(Etapa 8 - Audit): log("member.role.updated", { orgId, actorId: actorCtx.userId, targetMemberId, oldRole: membership.role, newRole })
+  void logAudit({
+    orgId,
+    actorUserId: actorCtx.userId,
+    action: "member.role_updated",
+    metadata: { targetMemberId, oldRole: membership.role, newRole },
+  });
 }

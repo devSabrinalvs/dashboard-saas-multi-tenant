@@ -5,6 +5,7 @@ import {
   createInvite as repoCreateInvite,
 } from "@/server/repo/invite-repo";
 import { InviteDuplicateError } from "@/server/errors/team-errors";
+import { logAudit } from "@/server/audit/log-audit";
 
 interface CreateInviteResult {
   inviteId: string;
@@ -43,7 +44,12 @@ export async function createInvite(
 
   // TODO: enviar email para ${email} com o link do convite (Etapa futura)
 
-  // TODO(Etapa 8 - Audit): log("member.invited", { orgId: ctx.orgId, invitedBy: ctx.userId, inviteeEmail: email })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "invite.created",
+    metadata: { inviteeEmail: email },
+  });
 
   return {
     inviteId: invite.id,
