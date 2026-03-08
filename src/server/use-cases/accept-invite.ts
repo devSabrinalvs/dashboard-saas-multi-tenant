@@ -14,6 +14,7 @@ import {
   InviteEmailMismatchError,
 } from "@/server/errors/team-errors";
 import { Role } from "@/generated/prisma/enums";
+import { logAudit } from "@/server/audit/log-audit";
 
 interface AcceptInviteInput {
   token: string;
@@ -83,7 +84,12 @@ export async function acceptInvite({
     }
   });
 
-  // TODO(Etapa 8 - Audit): log("member.joined", { orgId: org.id, userId, inviteId: invite.id })
+  void logAudit({
+    orgId: org.id,
+    actorUserId: userId,
+    action: "invite.accepted",
+    metadata: { inviteId: invite.id, orgId: org.id },
+  });
 
   return { orgSlug, orgName };
 }

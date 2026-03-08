@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/generated/prisma/enums";
 import { findOrgBySlug } from "@/server/repo/organization-repo";
+import { logAudit } from "@/server/audit/log-audit";
 
 /**
  * Lançado quando o slug escolhido já está em uso por outra organização.
@@ -34,11 +35,19 @@ export async function createOrganization({
   const existing = await findOrgBySlug(slug);
   if (existing) throw new SlugConflictError();
 
-  await prisma.$transaction(async (tx) => {
-    const org = await tx.organization.create({ data: { name, slug } });
+  const org = await prisma.$transaction(async (tx) => {
+    const created = await tx.organization.create({ data: { name, slug } });
     await tx.membership.create({
-      data: { userId, orgId: org.id, role: Role.OWNER },
+      data: { userId, orgId: created.id, role: Role.OWNER },
     });
+    return created;
+  });
+
+  void logAudit({
+    orgId: org.id,
+    actorUserId: userId,
+    action: "org.created",
+    metadata: { name, slug, orgId: org.id },
   });
 
   return { orgSlug: slug };

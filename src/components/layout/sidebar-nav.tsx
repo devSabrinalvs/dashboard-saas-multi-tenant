@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FolderKanban, LayoutDashboard, Settings, Users } from "lucide-react";
+import { FolderKanban, LayoutDashboard, Settings, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher, type OrgLink } from "./org-switcher";
 
@@ -16,9 +16,10 @@ interface SidebarNavProps {
   orgSlug: string;
   orgName: string;
   userOrgs: OrgLink[];
+  canAudit?: boolean;
 }
 
-export function SidebarNav({ orgSlug, orgName, userOrgs }: SidebarNavProps) {
+export function SidebarNav({ orgSlug, orgName, userOrgs, canAudit }: SidebarNavProps) {
   const pathname = usePathname();
   const base = `/org/${orgSlug}`;
 
@@ -26,6 +27,7 @@ export function SidebarNav({ orgSlug, orgName, userOrgs }: SidebarNavProps) {
     { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
     { href: `${base}/team`, label: "Equipe", icon: Users },
     { href: `${base}/projects`, label: "Projetos", icon: FolderKanban },
+    ...(canAudit ? [{ href: `${base}/audit`, label: "Auditoria", icon: ShieldCheck }] : []),
     { href: `${base}/settings`, label: "Configurações", icon: Settings },
   ];
 

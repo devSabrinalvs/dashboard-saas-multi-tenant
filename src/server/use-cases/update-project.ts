@@ -1,6 +1,7 @@
 import type { OrgContext } from "@/server/org/require-org-context";
 import { updateProject as repoUpdateProject, type Project } from "@/server/repo/project-repo";
 import { getProject } from "./get-project";
+import { logAudit } from "@/server/audit/log-audit";
 
 export type UpdateProjectData = {
   name?: string;
@@ -24,7 +25,12 @@ export async function updateProject(
 
   const project = await repoUpdateProject(projectId, data);
 
-  // TODO(Etapa 8 - Audit): log("project.updated", { orgId: ctx.orgId, projectId, actorId: ctx.userId })
+  void logAudit({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    action: "project.updated",
+    metadata: { projectId, changes: data },
+  });
 
   return project;
 }

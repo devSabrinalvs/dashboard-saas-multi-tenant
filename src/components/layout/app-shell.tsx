@@ -8,6 +8,7 @@ interface AppShellProps {
   orgSlug: string;
   orgName: string;
   userOrgs: OrgLink[];
+  canAudit?: boolean;
 }
 
 export function AppShell({
@@ -16,10 +17,11 @@ export function AppShell({
   orgSlug,
   orgName,
   userOrgs,
+  canAudit,
 }: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <SidebarNav orgSlug={orgSlug} orgName={orgName} userOrgs={userOrgs} />
+      <SidebarNav orgSlug={orgSlug} orgName={orgName} userOrgs={userOrgs} canAudit={canAudit} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar userEmail={userEmail} />
