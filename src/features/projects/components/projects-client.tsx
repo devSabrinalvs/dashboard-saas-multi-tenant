@@ -78,7 +78,7 @@ export function ProjectsClient({
           className="max-w-sm"
         />
         {canCreate && (
-          <Button size="sm" onClick={handleNew}>
+          <Button size="sm" onClick={handleNew} data-testid="new-project-btn">
             <Plus className="size-4" />
             Novo Projeto
           </Button>
@@ -123,7 +123,7 @@ export function ProjectsClient({
       {/* Table */}
       {!isLoading && !error && (data?.items.length ?? 0) > 0 && (
         <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" data-testid="projects-table">
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Projeto</th>

@@ -35,6 +35,7 @@ export const testPrisma = makeTestPrisma();
  */
 export async function resetDb(): Promise<void> {
   // Tabelas dependentes primeiro
+  await testPrisma.$executeRaw`DELETE FROM "RateLimitBucket"`;
   await testPrisma.$executeRaw`DELETE FROM "AuditLog"`;
   await testPrisma.$executeRaw`DELETE FROM "Task"`;
   await testPrisma.$executeRaw`DELETE FROM "Project"`;
