@@ -5,26 +5,10 @@ import { can } from "@/security/rbac";
 import { InviteForm } from "@/components/team/invite-form";
 import { MemberRowActions } from "@/components/team/member-row-actions";
 import { InviteRowActions } from "@/components/team/invite-row-actions";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/page-header";
+import { RoleBadge } from "@/components/shared/role-badge";
 import type { Role } from "@/generated/prisma/enums";
-
-const ROLE_LABELS: Record<Role, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  MEMBER: "Membro",
-  VIEWER: "Visualizador",
-};
-
-const ROLE_VARIANT: Record<
-  Role,
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  OWNER: "default",
-  ADMIN: "secondary",
-  MEMBER: "outline",
-  VIEWER: "outline",
-};
 
 function formatDate(d: Date) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -54,96 +38,100 @@ export default async function TeamPage({
   const pendingInvites = invites.filter((i) => i.status === "PENDING");
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Equipe</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Membros de <span className="font-medium">{ctx.orgName}</span>
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="Equipe" subtitle={`Membros de ${ctx.orgName}`} />
 
-      {/* Members table */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Membros ({members.length})
-        </h2>
-        <div className="rounded-md border divide-y">
-          {members.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center justify-between px-4 py-3 gap-4"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {m.user.name ?? m.user.email}
-                </p>
-                {m.user.name && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {m.user.email}
+      {/* Members list */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Membros ({members.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {members.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between px-6 py-3 gap-4"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {m.user.name ?? m.user.email}
                   </p>
-                )}
+                  {m.user.name && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {m.user.email}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <RoleBadge role={m.role as Role} />
+                  <span className="text-xs text-muted-foreground hidden sm:block">
+                    desde {formatDate(m.createdAt)}
+                  </span>
+                  {(canUpdateRole || canRemove) && (
+                    <MemberRowActions
+                      orgSlug={orgSlug}
+                      memberId={m.id}
+                      currentRole={m.role}
+                      isSelf={m.userId === ctx.userId}
+                      actorRole={ctx.role}
+                      canUpdateRole={canUpdateRole}
+                      canRemove={canRemove}
+                    />
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <Badge variant={ROLE_VARIANT[m.role]}>
-                  {ROLE_LABELS[m.role]}
-                </Badge>
-                <span className="text-xs text-muted-foreground hidden sm:block">
-                  desde {formatDate(m.createdAt)}
-                </span>
-                {(canUpdateRole || canRemove) && (
-                  <MemberRowActions
-                    orgSlug={orgSlug}
-                    memberId={m.id}
-                    currentRole={m.role}
-                    isSelf={m.userId === ctx.userId}
-                    actorRole={ctx.role}
-                    canUpdateRole={canUpdateRole}
-                    canRemove={canRemove}
-                  />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Pending invites + invite form */}
       {canInvite && (
-        <>
-          <Separator />
-          <section className="space-y-4">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Convites pendentes ({pendingInvites.length})
-            </h2>
-
-            {pendingInvites.length > 0 && (
-              <div className="rounded-md border divide-y">
-                {pendingInvites.map((invite) => (
-                  <div
-                    key={invite.id}
-                    className="flex items-center justify-between px-4 py-3 gap-4"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{invite.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Expira em {formatDate(invite.expiresAt)}
-                      </p>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Convites pendentes ({pendingInvites.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {pendingInvites.length > 0 ? (
+                <div className="divide-y">
+                  {pendingInvites.map((invite) => (
+                    <div
+                      key={invite.id}
+                      className="flex items-center justify-between px-6 py-3 gap-4"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{invite.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Expira em {formatDate(invite.expiresAt)}
+                        </p>
+                      </div>
+                      <InviteRowActions
+                        orgSlug={orgSlug}
+                        inviteId={invite.id}
+                      />
                     </div>
-                    <InviteRowActions orgSlug={orgSlug} inviteId={invite.id} />
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <p className="px-6 pb-4 text-sm text-muted-foreground">
+                  Nenhum convite pendente.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-            {pendingInvites.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Nenhum convite pendente.
-              </p>
-            )}
-
-            <InviteForm orgSlug={orgSlug} />
-          </section>
-        </>
+          <Card>
+            <CardContent className="pt-6">
+              <InviteForm orgSlug={orgSlug} />
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

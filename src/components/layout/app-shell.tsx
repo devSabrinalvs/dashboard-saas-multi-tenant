@@ -24,7 +24,7 @@ export function AppShell({
       <SidebarNav orgSlug={orgSlug} orgName={orgName} userOrgs={userOrgs} canAudit={canAudit} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar userEmail={userEmail} />
+        <Topbar userEmail={userEmail} orgName={orgName} />
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>

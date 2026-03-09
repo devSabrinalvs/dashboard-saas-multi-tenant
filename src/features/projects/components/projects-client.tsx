@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/shared/empty-state";
 import { ProjectFormModal } from "./project-form-modal";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useDeleteProject } from "@/features/projects/hooks/use-delete-project";
@@ -52,7 +53,12 @@ export function ProjectsClient({
   }
 
   function handleDelete(project: Project) {
-    if (!confirm(`Excluir projeto "${project.name}"? Esta ação não pode ser desfeita.`)) return;
+    if (
+      !confirm(
+        `Excluir projeto "${project.name}"? Esta ação não pode ser desfeita.`
+      )
+    )
+      return;
     deleteMutation.mutate(project.id);
   }
 
@@ -61,7 +67,6 @@ export function ProjectsClient({
     if (!open) setEditingProject(undefined);
   }
 
-  // Reset page when search changes
   function handleSearch(value: string) {
     setSearch(value);
     setPage(1);
@@ -89,7 +94,7 @@ export function ProjectsClient({
       {isLoading && (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-14 w-full" />
+            <Skeleton key={i} className="h-14 w-full rounded-lg" />
           ))}
         </div>
       )}
@@ -103,34 +108,34 @@ export function ProjectsClient({
 
       {/* Empty */}
       {!isLoading && !error && data?.items.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-12 text-center">
-          <Folder className="size-10 text-muted-foreground/50" />
-          <div>
-            <p className="text-sm font-medium">Nenhum projeto encontrado</p>
-            {search ? (
-              <p className="text-xs text-muted-foreground">
-                Nenhum projeto corresponde a &quot;{search}&quot;
-              </p>
-            ) : canCreate ? (
-              <p className="text-xs text-muted-foreground">
-                Crie o primeiro projeto clicando em &quot;Novo Projeto&quot;
-              </p>
-            ) : null}
-          </div>
-        </div>
+        <EmptyState
+          icon={Folder}
+          title="Nenhum projeto encontrado"
+          subtitle={
+            search
+              ? `Nenhum projeto corresponde a "${search}"`
+              : canCreate
+                ? `Crie o primeiro projeto clicando em "Novo Projeto"`
+                : undefined
+          }
+        />
       )}
 
       {/* Table */}
       {!isLoading && !error && (data?.items.length ?? 0) > 0 && (
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-xl border">
           <table className="w-full text-sm" data-testid="projects-table">
-            <thead className="bg-muted/50">
+            <thead className="bg-muted/40 border-b">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Projeto</th>
-                <th className="hidden px-4 py-3 text-left font-medium md:table-cell">
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  Projeto
+                </th>
+                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
                   Criado em
                 </th>
-                <th className="w-24 px-4 py-3 text-right font-medium">Ações</th>
+                <th className="w-24 px-4 py-3 text-right font-medium text-muted-foreground">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -139,9 +144,7 @@ export function ProjectsClient({
                   key={project.id}
                   className="cursor-pointer hover:bg-muted/30 transition-colors"
                   onClick={() =>
-                    router.push(
-                      `/org/${orgSlug}/projects/${project.id}`
-                    )
+                    router.push(`/org/${orgSlug}/projects/${project.id}`)
                   }
                 >
                   <td className="px-4 py-3">

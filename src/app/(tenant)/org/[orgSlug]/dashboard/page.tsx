@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireOrgContext } from "@/server/org/require-org-context";
 import { can } from "@/security/rbac";
 import {
@@ -8,11 +9,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
+import { Users, FolderKanban, CheckSquare, Plus, ShieldCheck } from "lucide-react";
 
-const placeholderCards = [
-  { title: "Usuários", description: "Membros ativos na organização" },
-  { title: "Projetos", description: "Projetos em andamento" },
-  { title: "Tarefas", description: "Tarefas abertas" },
+const METRIC_CARDS = [
+  {
+    title: "Membros",
+    description: "Membros ativos na organização",
+    icon: Users,
+  },
+  {
+    title: "Projetos",
+    description: "Projetos em andamento",
+    icon: FolderKanban,
+  },
+  {
+    title: "Tarefas",
+    description: "Tarefas abertas",
+    icon: CheckSquare,
+  },
 ] as const;
 
 export default async function DashboardPage({
@@ -28,26 +43,23 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Bem-vindo à{" "}
-          <span className="font-medium text-foreground">{ctx.orgName}</span>.
-          Você é{" "}
-          <span className="font-medium text-foreground">
-            {ctx.role.toLowerCase()}
-          </span>{" "}
-          desta organização.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Bem-vindo à ${ctx.orgName}. Seu papel é ${ctx.role.toLowerCase()}.`}
+      />
 
-      {/* Placeholder metric cards */}
+      {/* Metric cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        {placeholderCards.map(({ title, description }) => (
+        {METRIC_CARDS.map(({ title, description, icon: Icon }) => (
           <Card key={title}>
             <CardHeader className="pb-2">
-              <CardDescription>{description}</CardDescription>
-              <CardTitle className="text-2xl">—</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardDescription>{description}</CardDescription>
+                <div className="flex size-8 items-center justify-center rounded-md bg-primary/10">
+                  <Icon className="size-4 text-primary" aria-hidden />
+                </div>
+              </div>
+              <CardTitle className="text-3xl font-bold tabular-nums">—</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
@@ -58,59 +70,42 @@ export default async function DashboardPage({
         ))}
       </div>
 
-      {/* Ações — hint visual de RBAC (segurança garantida server-side) */}
+      {/* Quick actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Ações</CardTitle>
+          <CardTitle>Ações rápidas</CardTitle>
           <CardDescription>
             Ações disponíveis para o seu papel nesta organização.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
-          <div className="flex flex-col items-start gap-1">
-            <Button disabled={!canCreateProject}>Criar Project</Button>
-            {!canCreateProject && (
-              <p className="text-xs text-muted-foreground">Sem permissão</p>
-            )}
-          </div>
+        <CardContent className="flex flex-wrap gap-3">
+          {canCreateProject ? (
+            <Button asChild size="sm">
+              <Link href={`/org/${orgSlug}/projects`}>
+                <Plus className="size-4" />
+                Novo Projeto
+              </Link>
+            </Button>
+          ) : (
+            <Button size="sm" disabled>
+              <Plus className="size-4" />
+              Novo Projeto
+            </Button>
+          )}
 
-          <div className="flex flex-col items-start gap-1">
-            <Button disabled={!canReadAudit} variant="outline">
+          {canReadAudit ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/org/${orgSlug}/audit`}>
+                <ShieldCheck className="size-4" />
+                Ver Audit Log
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              <ShieldCheck className="size-4" />
               Ver Audit Log
             </Button>
-            {!canReadAudit && (
-              <p className="text-xs text-muted-foreground">Sem permissão</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contexto de tenant — remover em produção */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Contexto de Tenant</CardTitle>
-          <CardDescription>
-            Informações resolvidas server-side para esta sessão.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="space-y-1 text-sm">
-            {(
-              [
-                ["Org ID", ctx.orgId],
-                ["Org Slug", ctx.orgSlug],
-                ["User ID", ctx.userId],
-                ["Role", ctx.role],
-              ] as const
-            ).map(([label, value]) => (
-              <div key={label} className="flex gap-2">
-                <dt className="w-24 shrink-0 font-medium text-muted-foreground">
-                  {label}
-                </dt>
-                <dd className="truncate font-mono text-xs">{value}</dd>
-              </div>
-            ))}
-          </dl>
+          )}
         </CardContent>
       </Card>
     </div>
