@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { EmptyState } from "@/components/shared/empty-state";
 import { TaskFormModal } from "./task-form-modal";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
 import { useDeleteTask } from "@/features/tasks/hooks/use-delete-task";
@@ -25,15 +27,11 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELED: "Cancelado",
 };
 
-const STATUS_VARIANTS: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  TODO: "outline",
-  IN_PROGRESS: "default",
-  DONE: "secondary",
-  CANCELED: "destructive",
-};
+type ValidStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELED";
+
+function isValidStatus(s: string): s is ValidStatus {
+  return s in STATUS_LABELS;
+}
 
 interface TasksSectionProps {
   orgSlug: string;
@@ -80,7 +78,11 @@ export function TasksSection({
   }
 
   function handleDelete(task: Task) {
-    if (!confirm(`Excluir tarefa "${task.title}"? Esta ação não pode ser desfeita.`))
+    if (
+      !confirm(
+        `Excluir tarefa "${task.title}"? Esta ação não pode ser desfeita.`
+      )
+    )
       return;
     deleteMutation.mutate(task.id);
   }
@@ -120,10 +122,7 @@ export function TasksSection({
           onChange={(e) => handleSearch(e.target.value)}
           className="max-w-xs"
         />
-        <Select
-          value={status || "ALL"}
-          onValueChange={handleStatusChange}
-        >
+        <Select value={status || "ALL"} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -151,7 +150,7 @@ export function TasksSection({
       {isLoading && (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-14 w-full" />
+            <Skeleton key={i} className="h-14 w-full rounded-lg" />
           ))}
         </div>
       )}
@@ -165,40 +164,40 @@ export function TasksSection({
 
       {/* Empty */}
       {!isLoading && !error && data?.items.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-10 text-center">
-          <ListTodo className="size-9 text-muted-foreground/50" />
-          <div>
-            <p className="text-sm font-medium">Nenhuma tarefa encontrada</p>
-            {search || status || tag ? (
-              <p className="text-xs text-muted-foreground">
-                Nenhuma tarefa corresponde aos filtros aplicados
-              </p>
-            ) : canCreate ? (
-              <p className="text-xs text-muted-foreground">
-                Crie a primeira tarefa clicando em &quot;Nova Tarefa&quot;
-              </p>
-            ) : null}
-          </div>
-        </div>
+        <EmptyState
+          icon={ListTodo}
+          title="Nenhuma tarefa encontrada"
+          subtitle={
+            search || status || tag
+              ? "Nenhuma tarefa corresponde aos filtros aplicados"
+              : canCreate
+                ? `Crie a primeira tarefa clicando em "Nova Tarefa"`
+                : undefined
+          }
+        />
       )}
 
       {/* Table */}
       {!isLoading && !error && (data?.items.length ?? 0) > 0 && (
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-xl border">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50">
+            <thead className="bg-muted/40 border-b">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Título</th>
-                <th className="hidden px-4 py-3 text-left font-medium sm:table-cell">
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  Título
+                </th>
+                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
                   Status
                 </th>
-                <th className="hidden px-4 py-3 text-left font-medium md:table-cell">
+                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
                   Tags
                 </th>
-                <th className="hidden px-4 py-3 text-left font-medium lg:table-cell">
+                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
                   Criado em
                 </th>
-                <th className="w-24 px-4 py-3 text-right font-medium">Ações</th>
+                <th className="w-24 px-4 py-3 text-right font-medium text-muted-foreground">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -216,9 +215,11 @@ export function TasksSection({
                     )}
                   </td>
                   <td className="hidden px-4 py-3 sm:table-cell">
-                    <Badge variant={STATUS_VARIANTS[task.status] ?? "outline"}>
-                      {STATUS_LABELS[task.status] ?? task.status}
-                    </Badge>
+                    {isValidStatus(task.status) ? (
+                      <StatusBadge status={task.status} />
+                    ) : (
+                      <Badge variant="outline">{task.status}</Badge>
+                    )}
                   </td>
                   <td className="hidden px-4 py-3 md:table-cell">
                     {task.tags.length > 0 ? (
@@ -226,7 +227,7 @@ export function TasksSection({
                         {task.tags.slice(0, 3).map((t) => (
                           <span
                             key={t}
-                            className="rounded-full bg-secondary px-2 py-0.5 text-xs"
+                            className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
                           >
                             {t}
                           </span>

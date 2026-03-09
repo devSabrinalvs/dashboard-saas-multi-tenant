@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FolderKanban, LayoutDashboard, Settings, ShieldCheck, Users } from "lucide-react";
+import {
+  FolderKanban,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher, type OrgLink } from "./org-switcher";
 
@@ -19,7 +25,12 @@ interface SidebarNavProps {
   canAudit?: boolean;
 }
 
-export function SidebarNav({ orgSlug, orgName, userOrgs, canAudit }: SidebarNavProps) {
+export function SidebarNav({
+  orgSlug,
+  orgName,
+  userOrgs,
+  canAudit,
+}: SidebarNavProps) {
   const pathname = usePathname();
   const base = `/org/${orgSlug}`;
 
@@ -27,7 +38,9 @@ export function SidebarNav({ orgSlug, orgName, userOrgs, canAudit }: SidebarNavP
     { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
     { href: `${base}/team`, label: "Equipe", icon: Users },
     { href: `${base}/projects`, label: "Projetos", icon: FolderKanban },
-    ...(canAudit ? [{ href: `${base}/audit`, label: "Auditoria", icon: ShieldCheck }] : []),
+    ...(canAudit
+      ? [{ href: `${base}/audit`, label: "Auditoria", icon: ShieldCheck }]
+      : []),
     { href: `${base}/settings`, label: "Configurações", icon: Settings },
   ];
 
@@ -43,18 +56,19 @@ export function SidebarNav({ orgSlug, orgName, userOrgs, canAudit }: SidebarNavP
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 p-2" aria-label="Navegação principal">
+      <nav className="flex-1 space-y-0.5 p-2" aria-label="Navegação principal">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
+          const isActive =
+            pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-sidebar-primary/10 text-sidebar-primary font-medium"
+                  : "font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <Icon className="size-4 shrink-0" aria-hidden={true} />
@@ -63,6 +77,11 @@ export function SidebarNav({ orgSlug, orgName, userOrgs, canAudit }: SidebarNavP
           );
         })}
       </nav>
+
+      {/* Footer */}
+      <div className="border-t px-3 py-3">
+        <p className="text-xs text-muted-foreground/40">SaaS Dashboard</p>
+      </div>
     </aside>
   );
 }
