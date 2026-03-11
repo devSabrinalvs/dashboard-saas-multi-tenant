@@ -54,7 +54,7 @@ function PasswordStrengthIndicator({ value }: { value: string }) {
           <li key={req.label} className="flex items-center gap-1.5">
             {met ? (
               <Check
-                className="size-3.5 text-emerald-500 shrink-0"
+                className="size-3.5 text-foreground shrink-0"
                 aria-hidden
               />
             ) : (
@@ -63,7 +63,7 @@ function PasswordStrengthIndicator({ value }: { value: string }) {
             <span
               className={cn(
                 "text-xs",
-                met ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                met ? "text-foreground" : "text-muted-foreground"
               )}
             >
               {req.label}
@@ -109,7 +109,7 @@ export function SignupForm() {
       {/* Etapa B banner */}
       {submitted && (
         <div
-          className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary"
+          className="flex items-start gap-2.5 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-foreground"
           role="status"
         >
           <Info className="size-4 mt-0.5 shrink-0" aria-hidden />
@@ -209,7 +209,7 @@ export function SignupForm() {
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full bg-foreground text-background hover:bg-foreground/90"
           disabled={isSubmitting || submitted}
           data-testid="signup-submit"
         >
@@ -227,7 +227,7 @@ export function SignupForm() {
       {/* Footer link */}
       <p className="text-center text-sm text-muted-foreground">
         Já tem uma conta?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="font-medium text-foreground hover:underline">
           Entrar
         </Link>
       </p>
