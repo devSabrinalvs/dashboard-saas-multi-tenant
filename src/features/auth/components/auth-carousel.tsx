@@ -40,7 +40,7 @@ interface SlideData {
 }
 
 // ---------------------------------------------------------------------------
-// Slide content
+// Slide content data
 // ---------------------------------------------------------------------------
 
 const LOGIN_SLIDES: SlideData[] = [
@@ -133,7 +133,23 @@ const SLIDES: Record<"login" | "signup", SlideData[]> = {
 };
 
 // ---------------------------------------------------------------------------
-// Background decorative shapes
+// Shared class tokens — light mode (dark bg) / dark mode (light bg)
+// ---------------------------------------------------------------------------
+
+// Card: glass on dark bg / solid white card on light bg
+const cardBg =
+  "bg-white/8 dark:bg-black/5 dark:border dark:border-zinc-200/80";
+
+// Icon container
+const iconBg = "bg-white/12 dark:bg-zinc-200";
+
+// Text hierarchy
+const textPrimary = "text-white dark:text-zinc-900";
+const textSecondary = "text-white/65 dark:text-zinc-500";
+const textTertiary = "text-white/50 dark:text-zinc-400";
+
+// ---------------------------------------------------------------------------
+// Background decorative shapes — very subtle
 // ---------------------------------------------------------------------------
 
 function BackgroundShapes() {
@@ -142,16 +158,15 @@ function BackgroundShapes() {
       className="absolute inset-0 overflow-hidden pointer-events-none"
       aria-hidden
     >
-      <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/5" />
-      <div className="absolute -bottom-16 -left-16 size-72 rounded-full bg-white/5" />
-      <div className="absolute top-1/3 right-1/4 size-40 rounded-full bg-white/[0.03]" />
-      <div className="absolute top-2/3 left-1/3 size-24 rounded-full bg-white/[0.04]" />
+      <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/[0.03] dark:bg-black/[0.03]" />
+      <div className="absolute -bottom-16 -left-16 size-72 rounded-full bg-white/[0.03] dark:bg-black/[0.03]" />
+      <div className="absolute top-1/3 right-1/4 size-40 rounded-full bg-white/[0.02] dark:bg-black/[0.02]" />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Fake bar chart SVG
+// Fake bar chart
 // ---------------------------------------------------------------------------
 
 function MiniBarChart() {
@@ -165,7 +180,7 @@ function MiniBarChart() {
       {bars.map((h, i) => (
         <div
           key={i}
-          className="flex-1 rounded-sm bg-white/30"
+          className="flex-1 rounded-sm bg-white/25 dark:bg-zinc-400"
           style={{ height: `${h}%` }}
         />
       ))}
@@ -174,14 +189,14 @@ function MiniBarChart() {
 }
 
 // ---------------------------------------------------------------------------
-// Avatar group
+// Avatar group — neutral palette
 // ---------------------------------------------------------------------------
 
-const AVATAR_COLORS = [
-  "bg-violet-400",
-  "bg-blue-400",
-  "bg-emerald-400",
-  "bg-amber-400",
+const AVATAR_SHADES = [
+  "bg-zinc-600 dark:bg-zinc-400",
+  "bg-zinc-500 dark:bg-zinc-500",
+  "bg-zinc-400 dark:bg-zinc-600",
+  "bg-zinc-300 dark:bg-zinc-700",
 ];
 const AVATAR_INITIALS = ["M", "A", "J", "K"];
 
@@ -192,8 +207,10 @@ function AvatarGroup() {
         <div
           key={i}
           className={cn(
-            "flex size-7 items-center justify-center rounded-full border-2 border-white/20 text-xs font-bold text-white",
-            AVATAR_COLORS[i],
+            "flex size-7 items-center justify-center rounded-full border-2",
+            "border-zinc-800 dark:border-zinc-100",
+            "text-xs font-bold text-white dark:text-zinc-900",
+            AVATAR_SHADES[i],
             i > 0 && "-ml-2"
           )}
           aria-hidden
@@ -201,7 +218,7 @@ function AvatarGroup() {
           {initial}
         </div>
       ))}
-      <span className="ml-3 text-xs text-white/70">+1.2k usuários</span>
+      <span className={cn("ml-3 text-xs", textSecondary)}>+1.2k usuários</span>
     </div>
   );
 }
@@ -213,32 +230,50 @@ function AvatarGroup() {
 function HeroSlide({ slide }: { slide: SlideData }) {
   return (
     <div className="flex h-full flex-col justify-between">
-      {/* Main content */}
       <div className="space-y-6">
         <div className="space-y-3">
-          <h2 className="text-3xl font-bold text-white leading-tight">
+          <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
             {slide.headline}
           </h2>
-          <p className="text-white/70 text-sm leading-relaxed max-w-xs">
+          <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
             {slide.subtitle}
           </p>
         </div>
 
-        {/* Metric cards */}
         {slide.metrics && (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {slide.metrics.map((m) => (
               <motion.div
                 key={m.label}
                 whileHover={{ scale: 1.02 }}
-                className="rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 flex items-center gap-3"
+                className={cn(
+                  "rounded-xl px-4 py-3 flex items-center gap-3",
+                  cardBg
+                )}
               >
-                <div className="flex size-8 items-center justify-center rounded-md bg-white/20 shrink-0">
-                  <m.icon className="size-4 text-white" />
+                <div
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md shrink-0",
+                    iconBg
+                  )}
+                >
+                  <m.icon
+                    className={cn(
+                      "size-4",
+                      "text-white/80 dark:text-zinc-600"
+                    )}
+                  />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/60 truncate">{m.label}</p>
-                  <p className="text-lg font-bold text-white tabular-nums leading-tight">
+                  <p className={cn("text-xs truncate", textTertiary)}>
+                    {m.label}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-lg font-bold tabular-nums leading-tight",
+                      textPrimary
+                    )}
+                  >
                     {m.value}
                   </p>
                 </div>
@@ -248,11 +283,19 @@ function HeroSlide({ slide }: { slide: SlideData }) {
         )}
       </div>
 
-      {/* CTA card (Arcana-inspired) */}
+      {/* CTA card */}
       {slide.ctaText && (
-        <div className="rounded-xl bg-black/30 backdrop-blur-sm border border-white/10 p-4 space-y-3">
+        <div
+          className={cn(
+            "rounded-xl border p-4 space-y-3",
+            "bg-white/5 border-white/10",
+            "dark:bg-zinc-100 dark:border-zinc-200"
+          )}
+        >
           <AvatarGroup />
-          <p className="text-sm font-medium text-white">{slide.ctaText}</p>
+          <p className={cn("text-sm font-medium", textPrimary)}>
+            {slide.ctaText}
+          </p>
         </div>
       )}
     </div>
@@ -264,39 +307,44 @@ function DashboardSlide({ slide }: { slide: SlideData }) {
     <div className="flex h-full flex-col justify-between">
       <div className="space-y-6">
         <div className="space-y-3">
-          <h2 className="text-3xl font-bold text-white leading-tight">
+          <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
             {slide.headline}
           </h2>
-          <p className="text-white/70 text-sm leading-relaxed max-w-xs">
+          <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
             {slide.subtitle}
           </p>
         </div>
 
-        {/* Mini dashboard grid */}
         {slide.metrics && (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             {slide.metrics.map((m) => (
               <motion.div
                 key={m.label}
-                whileHover={{ scale: 1.03, filter: "brightness(1.1)" }}
-                className="rounded-xl bg-white/10 backdrop-blur-sm p-3 space-y-1"
+                whileHover={{ scale: 1.03 }}
+                className={cn("rounded-xl p-3 space-y-1", cardBg)}
               >
                 <div className="flex items-center gap-1.5">
-                  <m.icon className="size-3.5 text-white/60" />
-                  <p className="text-xs text-white/60 truncate">{m.label}</p>
+                  <m.icon
+                    className={cn("size-3.5", "text-white/50 dark:text-zinc-400")}
+                  />
+                  <p className={cn("text-xs truncate", textTertiary)}>
+                    {m.label}
+                  </p>
                 </div>
-                <p className="text-xl font-bold text-white tabular-nums">
+                <p className={cn("text-xl font-bold tabular-nums", textPrimary)}>
                   {m.value}
                 </p>
               </motion.div>
             ))}
 
-            {/* Chart card spanning full width */}
+            {/* Chart card */}
             <motion.div
               whileHover={{ scale: 1.01 }}
-              className="col-span-2 rounded-xl bg-white/10 backdrop-blur-sm p-3 space-y-2"
+              className={cn("col-span-2 rounded-xl p-3 space-y-2", cardBg)}
             >
-              <p className="text-xs text-white/60">Atividade — últimos 7 dias</p>
+              <p className={cn("text-xs", textTertiary)}>
+                Atividade — últimos 7 dias
+              </p>
               <MiniBarChart />
             </motion.div>
           </div>
@@ -311,17 +359,16 @@ function FeaturesSlide({ slide }: { slide: SlideData }) {
     <div className="flex h-full flex-col justify-between">
       <div className="space-y-6">
         <div className="space-y-3">
-          <h2 className="text-3xl font-bold text-white leading-tight">
+          <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
             {slide.headline}
           </h2>
-          <p className="text-white/70 text-sm leading-relaxed max-w-xs">
+          <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
             {slide.subtitle}
           </p>
         </div>
 
-        {/* Feature checklist */}
         {slide.features && (
-          <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 space-y-3">
+          <div className={cn("rounded-xl p-4 space-y-3", cardBg)}>
             {slide.features.map((feature, i) => (
               <motion.div
                 key={feature}
@@ -330,20 +377,37 @@ function FeaturesSlide({ slide }: { slide: SlideData }) {
                 transition={{ delay: i * 0.08 }}
                 className="flex items-center gap-3"
               >
-                <div className="flex size-5 items-center justify-center rounded-full bg-white/20 shrink-0">
-                  <Check className="size-3 text-white" strokeWidth={3} />
+                <div
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-full shrink-0",
+                    iconBg
+                  )}
+                >
+                  <Check
+                    className={cn(
+                      "size-3",
+                      "text-white/80 dark:text-zinc-600"
+                    )}
+                    strokeWidth={3}
+                  />
                 </div>
-                <span className="text-sm text-white/90">{feature}</span>
+                <span className={cn("text-sm", textSecondary)}>{feature}</span>
               </motion.div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Quote */}
       {slide.quote && (
-        <blockquote className="border-l-2 border-white/30 pl-4">
-          <p className="text-sm text-white/80 italic">{slide.quote}</p>
+        <blockquote className="border-l-2 border-white/20 dark:border-zinc-300 pl-4">
+          <p
+            className={cn(
+              "text-sm italic",
+              "text-white/60 dark:text-zinc-500"
+            )}
+          >
+            {slide.quote}
+          </p>
         </blockquote>
       )}
     </div>
@@ -393,7 +457,6 @@ export function AuthCarousel({ mode }: AuthCarouselProps) {
   const [direction, setDirection] = useState(1);
   const [paused, setPaused] = useState(false);
 
-  // Reset to first slide when mode changes
   useEffect(() => {
     setCurrent(0);
     setDirection(1);
@@ -417,7 +480,6 @@ export function AuthCarousel({ mode }: AuthCarouselProps) {
     [current]
   );
 
-  // Auto-advance
   useEffect(() => {
     if (paused || reduced) return;
     const id = setInterval(goNext, INTERVAL);
@@ -426,19 +488,38 @@ export function AuthCarousel({ mode }: AuthCarouselProps) {
 
   return (
     <div
-      className="relative h-full bg-gradient-to-br from-primary via-primary/90 to-indigo-800 overflow-hidden"
+      className={cn(
+        "relative h-full overflow-hidden",
+        // Light mode: near-black
+        "bg-zinc-950",
+        // Dark mode: near-white (inversion)
+        "dark:bg-zinc-50"
+      )}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Decorative background shapes */}
       <BackgroundShapes />
 
-      {/* Brand — always visible above slides */}
+      {/* Brand */}
       <div className="absolute top-8 left-8 flex items-center gap-2 z-20">
-        <div className="flex size-8 items-center justify-center rounded-md bg-white/20">
-          <BarChart3 className="size-4 text-white" />
+        <div
+          className={cn(
+            "flex size-8 items-center justify-center rounded-md",
+            "bg-white/10 dark:bg-zinc-200"
+          )}
+        >
+          <BarChart3
+            className={cn("size-4", "text-white/80 dark:text-zinc-700")}
+          />
         </div>
-        <span className="text-sm font-semibold text-white">SaaS Dashboard</span>
+        <span
+          className={cn(
+            "text-sm font-semibold",
+            "text-white/80 dark:text-zinc-700"
+          )}
+        >
+          Projorg
+        </span>
       </div>
 
       {/* Slides */}
@@ -477,8 +558,8 @@ export function AuthCarousel({ mode }: AuthCarouselProps) {
               className={cn(
                 "rounded-full transition-all duration-300",
                 i === current
-                  ? "w-5 h-2 bg-white"
-                  : "size-2 bg-white/40 hover:bg-white/60"
+                  ? "w-5 h-2 bg-white dark:bg-zinc-800"
+                  : "size-2 bg-white/30 hover:bg-white/50 dark:bg-zinc-300 dark:hover:bg-zinc-500"
               )}
             />
           ))}
@@ -489,14 +570,22 @@ export function AuthCarousel({ mode }: AuthCarouselProps) {
           <button
             onClick={goPrev}
             aria-label="Slide anterior"
-            className="flex size-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition-colors",
+              "bg-white/8 hover:bg-white/15 text-white/70",
+              "dark:bg-zinc-900/8 dark:hover:bg-zinc-900/15 dark:text-zinc-500"
+            )}
           >
             <ChevronLeft className="size-4" />
           </button>
           <button
             onClick={goNext}
             aria-label="Próximo slide"
-            className="flex size-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition-colors",
+              "bg-white/8 hover:bg-white/15 text-white/70",
+              "dark:bg-zinc-900/8 dark:hover:bg-zinc-900/15 dark:text-zinc-500"
+            )}
           >
             <ChevronRight className="size-4" />
           </button>
