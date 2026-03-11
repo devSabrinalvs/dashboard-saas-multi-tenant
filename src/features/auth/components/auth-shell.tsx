@@ -1,42 +1,70 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BarChart3 } from "lucide-react";
+import { motion, LayoutGroup, useReducedMotion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { AuthPanel } from "./auth-panel";
 
 interface AuthShellProps {
   children: ReactNode;
-  variant: "login" | "signup";
+  mode: "login" | "signup";
 }
 
-export function AuthShell({ children, variant }: AuthShellProps) {
+export function AuthShell({ children, mode }: AuthShellProps) {
+  const reduced = useReducedMotion();
+  const spring = reduced
+    ? { duration: 0 }
+    : ({ type: "spring", stiffness: 300, damping: 30 } as const);
+
+  const isLogin = mode === "login";
+
   return (
-    <div className="min-h-screen grid md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_7fr]">
-      {/* Left column — form area */}
-      <div className="relative flex flex-col bg-background">
-        {/* Brand — visible only on mobile (hidden on md+ where panel shows brand) */}
-        <div className="flex items-center gap-2 p-6 md:p-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
-            aria-label="Ir para página inicial"
-          >
-            <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
-              <BarChart3 className="size-4 text-primary" />
-            </div>
-            <span className="text-sm font-semibold">SaaS Dashboard</span>
-          </Link>
-        </div>
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden">
+      <LayoutGroup id="auth-shell">
+        {/* Form pane */}
+        <motion.div
+          layout
+          transition={spring}
+          className={cn(
+            "relative flex flex-col bg-background",
+            "w-full md:w-5/12",
+            isLogin ? "md:order-1" : "md:order-2"
+          )}
+        >
+          {/* Brand */}
+          <div className="flex items-center gap-2 p-6 md:p-8">
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
+              aria-label="Ir para página inicial"
+            >
+              <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
+                <BarChart3 className="size-4 text-primary" />
+              </div>
+              <span className="text-sm font-semibold">SaaS Dashboard</span>
+            </Link>
+          </div>
 
-        {/* Form centered vertically */}
-        <div className="flex flex-1 items-center justify-center px-6 pb-12">
-          <div className="w-full max-w-sm">{children}</div>
-        </div>
-      </div>
+          {/* Form centered vertically */}
+          <div className="flex flex-1 items-center justify-center px-6 pb-12">
+            <div className="w-full max-w-sm">{children}</div>
+          </div>
+        </motion.div>
 
-      {/* Right column — visual panel (hidden on mobile) */}
-      <div className="hidden md:block relative overflow-hidden">
-        <AuthPanel variant={variant} />
-      </div>
+        {/* Art pane — hidden on mobile */}
+        <motion.div
+          layout
+          transition={spring}
+          className={cn(
+            "hidden md:block relative overflow-hidden md:flex-1",
+            isLogin ? "md:order-2" : "md:order-1"
+          )}
+        >
+          <AuthPanel mode={mode} />
+        </motion.div>
+      </LayoutGroup>
     </div>
   );
 }
