@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import { motion, LayoutGroup, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { AuthPanel } from "./auth-panel";
 
 interface AuthShellProps {
@@ -29,12 +30,12 @@ export function AuthShell({ children, mode }: AuthShellProps) {
           transition={spring}
           className={cn(
             "relative flex flex-col bg-background",
-            "w-full md:w-5/12",
+            "w-full md:w-1/2",
             isLogin ? "md:order-1" : "md:order-2"
           )}
         >
-          {/* Brand */}
-          <div className="flex items-center gap-2 p-6 md:p-8">
+          {/* Brand + Theme toggle */}
+          <div className="flex items-center justify-between p-6 md:p-8">
             <Link
               href="/"
               className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
@@ -43,8 +44,9 @@ export function AuthShell({ children, mode }: AuthShellProps) {
               <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
                 <BarChart3 className="size-4 text-primary" />
               </div>
-              <span className="text-sm font-semibold">SaaS Dashboard</span>
+              <span className="text-sm font-semibold">Projorg</span>
             </Link>
+            <ThemeToggle />
           </div>
 
           {/* Form centered vertically */}
@@ -53,16 +55,18 @@ export function AuthShell({ children, mode }: AuthShellProps) {
           </div>
         </motion.div>
 
-        {/* Art pane — hidden on mobile */}
+        {/* Art pane — hidden on mobile; bg-background creates the "margin" around the carousel card */}
         <motion.div
           layout
           transition={spring}
           className={cn(
-            "hidden md:block relative overflow-hidden md:flex-1",
+            "hidden md:flex md:w-1/2 bg-background p-3 lg:p-4",
             isLogin ? "md:order-2" : "md:order-1"
           )}
         >
-          <AuthPanel mode={mode} />
+          <div className="flex-1 rounded-2xl overflow-hidden">
+            <AuthPanel mode={mode} />
+          </div>
         </motion.div>
       </LayoutGroup>
     </div>
