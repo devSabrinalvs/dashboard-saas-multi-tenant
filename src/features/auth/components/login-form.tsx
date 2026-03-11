@@ -179,7 +179,7 @@ export function LoginForm() {
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full bg-foreground text-background hover:bg-foreground/90"
           disabled={isSubmitting}
           data-testid="login-submit"
         >
@@ -199,7 +199,7 @@ export function LoginForm() {
         Não tem conta?{" "}
         <Link
           href="/signup"
-          className="font-medium text-primary hover:underline"
+          className="font-medium text-foreground hover:underline"
         >
           Criar conta
         </Link>

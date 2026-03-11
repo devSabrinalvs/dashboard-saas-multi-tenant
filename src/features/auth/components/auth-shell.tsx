@@ -41,8 +41,8 @@ export function AuthShell({ children, mode }: AuthShellProps) {
               className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
               aria-label="Ir para página inicial"
             >
-              <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
-                <BarChart3 className="size-4 text-primary" />
+              <div className="flex size-7 items-center justify-center rounded-md bg-foreground/[0.08]">
+                <BarChart3 className="size-4 text-foreground" />
               </div>
               <span className="text-sm font-semibold">Projorg</span>
             </Link>
@@ -60,7 +60,7 @@ export function AuthShell({ children, mode }: AuthShellProps) {
           layout
           transition={spring}
           className={cn(
-            "hidden md:flex md:w-1/2 bg-background p-3 lg:p-4",
+            "hidden md:flex md:w-1/2 bg-background [padding:calc(var(--spacing)*8)]",
             isLogin ? "md:order-2" : "md:order-1"
           )}
         >
