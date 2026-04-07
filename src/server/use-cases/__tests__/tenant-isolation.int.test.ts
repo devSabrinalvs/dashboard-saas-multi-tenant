@@ -38,7 +38,7 @@ function makeCtx(
   org: { id: string; slug: string; name: string },
   role: Role = Role.OWNER
 ): OrgContext {
-  return { userId, email, orgId: org.id, orgSlug: org.slug, orgName: org.name, role };
+  return { userId, email, orgId: org.id, orgSlug: org.slug, orgName: org.name, role, plan: "FREE" };
 }
 
 describe("Isolamento multi-tenant — Projetos", () => {

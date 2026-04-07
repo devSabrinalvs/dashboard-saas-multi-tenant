@@ -14,6 +14,8 @@ const config = {
   // Exclui testes de integração (precisam de DB + ESM)
   testPathIgnorePatterns: ["\\.int\\.test\\.ts$"],
   moduleNameMapper: {
+    // Mock do Prisma para testes unitários (evita import.meta em modo CJS)
+    "^@/lib/prisma$": "<rootDir>/tests/__mocks__/prisma.ts",
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@tests/(.*)$": "<rootDir>/tests/$1",
   },

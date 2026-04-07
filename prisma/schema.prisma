@@ -30,6 +30,25 @@ enum TaskStatus {
   CANCELED
 }
 
+/// Plano de assinatura da organização.
+/// FREE: limites básicos. PRO: uso profissional. BUSINESS: escala corporativa.
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+/// Status da assinatura Stripe.
+/// PAST_DUE: mantém plano ativo com banner de aviso (grace period).
+/// CANCELED: downgrade para FREE.
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  TRIALING
+}
+
 // ─── Auth.js required models ──────────────────────────────────────────────────
 
 model User {
@@ -43,12 +62,48 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts    Account[]
-  sessions    Session[]
-  memberships Membership[]
+  // ── Two-factor authentication ──────────────────────────────────────────────
+  /// Se o usuário tem 2FA ativado.
+  twoFactorEnabled             Boolean   @default(false)
+  /// Secret TOTP criptografado com AES-256-GCM. Null quando 2FA desativado.
+  totpSecretEncrypted          String?
+  /// Secret TOTP temporário durante o wizard de setup (antes de confirmar).
+  twoFactorTempSecretEncrypted String?
+  /// Timestamp de quando o 2FA foi ativado.
+  twoFactorEnabledAt           DateTime?
+  /// Hashes SHA-256 dos recovery codes. Array vazio quando não configurado.
+  twoFactorRecoveryCodeHashes  String[]
+
+  twoFactorVerifications TwoFactorVerification[]
+  trustedDevices         TrustedDevice[]
+
+  // ── Soft delete ────────────────────────────────────────────────────────────
+  /// Timestamp de deleção suave. Non-null = conta excluída; login bloqueado.
+  deletedAt DateTime?
+
+  // ── Login lockout ──────────────────────────────────────────────────────────
+  /// Número de tentativas de login com falha desde o último login bem-sucedido.
+  failedLoginCount    Int       @default(0)
+  /// Se preenchido e no futuro, a conta está bloqueada até este momento.
+  lockedUntil         DateTime?
+  /// Timestamp da última tentativa de login com falha.
+  lastFailedLoginAt   DateTime?
+  /// Timestamp do último login bem-sucedido.
+  lastLoginAt         DateTime?
+  /// Timestamp do último email de alerta de segurança enviado (cooldown de 6h).
+  lastSecurityAlertAt DateTime?
+
+  accounts                Account[]
+  sessions                Session[]
+  sessionMetas            UserSessionMeta[]
+  memberships             Membership[]
   /// Logs de auditoria onde este usuário foi o ator.
   /// Quando o usuário é deletado, actorUserId vira NULL (onDelete: SetNull).
-  auditLogs   AuditLog[]
+  auditLogs               AuditLog[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  /// Tarefas atribuídas a este usuário.
+  assignedTasks           Task[]                   @relation("TaskAssignee")
 }
 
 model Account {
@@ -95,10 +150,34 @@ model Organization {
   name      String
   /// Identificador único legível por humanos (ex: "minha-empresa").
   slug      String   @unique
+  /// Plano ativo. Alterado APENAS via webhook Stripe (fonte da verdade).
+  plan      Plan     @default(FREE)
+  /// Timestamp da última alteração de plano.
+  planUpdatedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships Membership[]
+  // ── Stripe Billing ─────────────────────────────────────────────────────────
+  /// ID do Customer no Stripe. Criado no primeiro checkout.
+  stripeCustomerId     String?            @unique
+  /// ID da assinatura ativa no Stripe.
+  stripeSubscriptionId String?            @unique
+  /// ID do Price (produto) da assinatura atual — usado para mapear ao Plan.
+  stripePriceId        String?
+  /// Status atual da assinatura Stripe.
+  subscriptionStatus   SubscriptionStatus?
+  /// Fim do período atual da assinatura (Unix timestamp convertido para DateTime).
+  currentPeriodEnd     DateTime?
+  /// Email de billing registrado no Customer Stripe.
+  billingEmail         String?
+  /// Até quando o plano pago é mantido em caso de falha de pagamento (grace period).
+  /// Nulo = sem grace ativo.
+  graceUntil           DateTime?
+  /// Se true, a assinatura será cancelada ao fim do período atual.
+  cancelAtPeriodEnd    Boolean   @default(false)
+
+  memberships    Membership[]
+  billingEmails  BillingEmailSent[]
   invites     Invite[]
   auditLogs   AuditLog[]
   projects    Project[]
@@ -177,13 +256,106 @@ model Task {
   status      TaskStatus @default(TODO)
   /// Tags livres para filtragem (ex: ["bug", "urgente"]).
   tags        String[]
+  /// Responsável pela tarefa. Null = sem responsável. Deve ser membro da org.
+  assigneeUserId String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Restrict)
   project      Project      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  /// Usuário responsável. Null quando o responsável é removido da org ou do sistema.
+  assignee     User?        @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
 
   @@index([orgId, projectId, status])
+  @@index([orgId, assigneeUserId])
+}
+
+/// Token de verificação de email (gerado no signup / reenvio).
+/// Armazena apenas o hash SHA-256 do token raw — nunca o token em texto claro.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  /// SHA-256 do token raw enviado por email. Unique para evitar colisões.
+  tokenHash String    @unique
+  expiresAt DateTime
+  /// Preenchido quando o token é consumido (verificação ou invalidação).
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Token de redefinição de senha (gerado em forgot-password).
+/// Armazena apenas o hash SHA-256 do token raw — nunca o token em texto claro.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  /// SHA-256 do token raw enviado por email. Unique para evitar colisões.
+  tokenHash String    @unique
+  expiresAt DateTime
+  /// Preenchido quando o token é consumido (reset ou invalidação).
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+/// Verificação 2FA pendente — criada após TOTP validado; consumida pelo JWT callback.
+/// Permite que o servidor sinalize ao JWT que o segundo fator foi completado.
+model TwoFactorVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Nonce da sessão JWT para correlacionar com o token correto.
+  nonce     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, nonce])
+}
+
+/// Dispositivo de confiança: pula 2FA por 30 dias após "Remember this device".
+model TrustedDevice {
+  id         String    @id @default(cuid())
+  userId     String
+  /// SHA-256 do token raw armazenado no cookie HttpOnly.
+  tokenHash  String    @unique
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Metadata de sessão de login (compatível com JWT strategy do NextAuth).
+/// sessionId é um ID opaco armazenado no JWT — nunca expõe o token raw.
+/// Permite listar, identificar e revogar sessões individuais.
+model UserSessionMeta {
+  id          String    @id @default(cuid())
+  userId      String
+  /// ID opaco gerado no login e armazenado no JWT. Nunca é o token raw.
+  sessionId   String    @unique
+  createdAt   DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  ip          String?
+  userAgent   String?
+  /// Label legível gerado a partir do userAgent (ex: "Chrome em macOS").
+  deviceLabel String?
+  revokedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
 }
 
 /// Bucket de rate limiting com janela fixa (fixed window).
@@ -196,4 +368,49 @@ model RateLimitBucket {
   updatedAt   DateTime @updatedAt
 
   @@index([key])
+}
+
+/// Registro do último email de billing enviado por org+tipo.
+/// Permite impor cooldown de 24h para não spammar owners em caso de falha recorrente.
+model BillingEmailSent {
+  id     String   @id @default(cuid())
+  orgId  String
+  /// Tipo do email: "payment_failed" | "subscription_canceled" | "downgraded"
+  type   String
+  sentAt DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, type])
+}
+
+/// Registro de eventos Stripe já processados — garante idempotência.
+/// stripeEventId é o ID único do evento enviado pelo Stripe.
+/// Antes de processar um webhook, verificar se o ID já existe aqui.
+model StripeWebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  processedAt   DateTime @default(now())
+}
+
+/// Log de auditoria do Admin Console interno.
+/// Append-only — nunca deletar registros.
+/// actorAdminUserId: email do admin (não FK — admin pode ser removido da allowlist).
+model AdminAuditLog {
+  id               String   @id @default(cuid())
+  /// Email do administrador que realizou a ação.
+  actorAdminEmail  String
+  /// Ex: "admin.user.unlock", "admin.org.force_plan"
+  action           String
+  /// "user" | "org"
+  targetType       String
+  /// userId ou orgId alvo.
+  targetId         String
+  /// Dados adicionais da ação (ex: plano anterior/novo, email do usuário).
+  metadata         Json     @default("{}")
+  createdAt        DateTime @default(now())
+
+  @@index([actorAdminEmail])
+  @@index([targetType, targetId])
+  @@index([action])
 }

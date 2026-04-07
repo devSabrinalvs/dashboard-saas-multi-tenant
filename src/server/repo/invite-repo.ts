@@ -83,6 +83,16 @@ export async function markInviteAccepted(inviteId: string): Promise<Invite> {
 }
 
 /**
+ * Conta convites PENDING não expirados de uma org.
+ * Usado para calcular "assentos reservados" no enforcement de plano.
+ */
+export async function countPendingInvites(orgId: string): Promise<number> {
+  return prisma.invite.count({
+    where: { orgId, status: InviteStatus.PENDING, expiresAt: { gt: new Date() } },
+  });
+}
+
+/**
  * Lista todos os convites de uma org, do mais recente ao mais antigo.
  */
 export async function listInvites(orgId: string): Promise<Invite[]> {

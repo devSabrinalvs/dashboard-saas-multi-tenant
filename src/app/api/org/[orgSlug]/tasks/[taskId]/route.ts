@@ -7,7 +7,7 @@ import {
 import { taskUpdateSchema } from "@/schemas/task";
 import { updateTask } from "@/server/use-cases/update-task";
 import { deleteTask } from "@/server/use-cases/delete-task";
-import { TaskNotFoundError } from "@/server/errors/project-errors";
+import { TaskNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { rateLimit } from "@/security/rate-limit/rate-limit";
 import { mutationKey } from "@/security/rate-limit/keys";
@@ -54,6 +54,9 @@ export async function PATCH(
     }
     if (err instanceof TaskNotFoundError) {
       return NextResponse.json({ error: err.message }, { status: 404 });
+    }
+    if (err instanceof AssigneeNotInOrgError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
     }
     throw err;
   }

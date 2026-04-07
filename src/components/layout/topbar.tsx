@@ -1,7 +1,8 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -35,9 +36,13 @@ function getInitials(email: string): string {
 
 export function Topbar({ userEmail, orgName }: TopbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const segment =
     pathname.split("/").find((s) => PAGE_SEGMENTS.includes(s)) ?? "";
   const pageLabel = PAGE_LABELS[segment] ?? "";
+
+  // Extrai /org/[orgSlug] da URL atual para montar link de configurações
+  const orgSlug = pathname.match(/\/org\/([^/]+)/)?.[1] ?? "";
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card px-4 gap-4">
@@ -78,6 +83,14 @@ export function Topbar({ userEmail, orgName }: TopbarProps) {
                 {userEmail}
               </p>
             </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer flex items-center gap-2"
+              onClick={() => router.push(`/org/${orgSlug}/settings`)}
+            >
+              <Settings className="size-3.5" aria-hidden />
+              Configurações
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer"

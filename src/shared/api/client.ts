@@ -3,7 +3,23 @@
  * Usado pelos hooks TanStack Query nos client components.
  */
 
-type ApiError = { error: string; issues?: unknown[] };
+type ApiErrorBody = { error: string; code?: string; details?: unknown; issues?: unknown[] };
+
+/**
+ * Erro lançado quando a API retorna status não-ok.
+ * Expõe `code` para que os consumers possam diferenciar tipos de erro
+ * (ex: "PLAN_LIMIT_REACHED") sem depender da mensagem de texto.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly details?: unknown
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -12,8 +28,12 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const body = (await res.json()) as ApiError;
-    throw new Error(body.error ?? `HTTP ${res.status}`);
+    const body = (await res.json()) as ApiErrorBody;
+    throw new ApiError(
+      body.error ?? `HTTP ${res.status}`,
+      body.code,
+      body.details
+    );
   }
 
   return res.json() as Promise<T>;

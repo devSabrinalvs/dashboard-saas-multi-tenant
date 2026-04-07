@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface InviteRowActionsProps {
   orgSlug: string;
@@ -21,6 +22,7 @@ export function InviteRowActions({ orgSlug, inviteId }: InviteRowActionsProps) {
     setError(null);
     const res = await fetch(`/api/org/${orgSlug}/invites/${inviteId}`, {
       method: "DELETE",
+      headers: csrfHeaders(),
     });
     setLoading(false);
     if (res.ok) {

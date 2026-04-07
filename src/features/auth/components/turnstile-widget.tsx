@@ -60,6 +60,13 @@ export function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetProps) {
     };
   }, []);
 
+  // Sem SITE_KEY: graceful degradation — avisa o pai que não há token
+  // para que botões dependentes de turnstileToken possam ser habilitados.
+  useEffect(() => {
+    if (!SITE_KEY) onToken("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!SITE_KEY) return null;
 
   return (

@@ -61,6 +61,7 @@ export default async function ProjectDetailPage({
         canCreate={canCreateTask}
         canUpdate={canUpdateTask}
         canDelete={canDeleteTask}
+        currentUserId={ctx.userId}
       />
     </div>
   );

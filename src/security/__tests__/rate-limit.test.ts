@@ -134,8 +134,8 @@ describe("getClientIp()", () => {
 });
 
 describe("RATE_LIMITS constants", () => {
-  it("LOGIN_IP: 10 req / 60s", () => {
-    expect(RATE_LIMITS.LOGIN_IP).toEqual({ limit: 10, windowMs: 60_000 });
+  it("LOGIN_IP: 20 req / 60s", () => {
+    expect(RATE_LIMITS.LOGIN_IP).toEqual({ limit: 20, windowMs: 60_000 });
   });
 
   it("INVITE: 20 req / 3600s", () => {

@@ -7,7 +7,8 @@ import {
 import { taskCreateSchema, taskQuerySchema } from "@/schemas/task";
 import { listTasksByProject } from "@/server/use-cases/list-tasks";
 import { createTask } from "@/server/use-cases/create-task";
-import { ProjectNotFoundError } from "@/server/errors/project-errors";
+import { ProjectNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
+import { PlanLimitReachedError } from "@/billing/plan-limits";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { rateLimit } from "@/security/rate-limit/rate-limit";
 import { mutationKey } from "@/security/rate-limit/keys";
@@ -29,6 +30,7 @@ export async function GET(
       search: searchParams.get("search") ?? undefined,
       status: searchParams.get("status") ?? undefined,
       tag: searchParams.get("tag") ?? undefined,
+      assignedTo: searchParams.get("assignedTo") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
     });
@@ -40,9 +42,17 @@ export async function GET(
       );
     }
 
+    // Resolve "me" → userId do contexto autenticado
+    const assigneeUserId =
+      parsed.data.assignedTo === "me" ? ctx.userId : undefined;
+
     const result = await listTasksByProject(ctx, projectId, {
-      ...parsed.data,
+      search: parsed.data.search,
       status: parsed.data.status as TaskStatus | undefined,
+      tag: parsed.data.tag,
+      assigneeUserId,
+      page: parsed.data.page,
+      pageSize: parsed.data.pageSize,
     });
     return NextResponse.json(result);
   } catch (err) {
@@ -94,6 +104,15 @@ export async function POST(
     }
     if (err instanceof ProjectNotFoundError) {
       return NextResponse.json({ error: err.message }, { status: 404 });
+    }
+    if (err instanceof AssigneeNotInOrgError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    if (err instanceof PlanLimitReachedError) {
+      return NextResponse.json(
+        { error: err.message, code: err.code, details: err.details },
+        { status: err.status }
+      );
     }
     throw err;
   }

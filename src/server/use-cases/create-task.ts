@@ -1,14 +1,18 @@
 import type { OrgContext } from "@/server/org/require-org-context";
-import { createTask as repoCreateTask, type Task } from "@/server/repo/task-repo";
+import { createTask as repoCreateTask, countTasksByProject, type Task } from "@/server/repo/task-repo";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { getProject } from "./get-project";
 import { logAudit } from "@/server/audit/log-audit";
+import { getPlanLimits, PlanLimitReachedError } from "@/billing/plan-limits";
+import { findMembership } from "@/server/repo/membership-repo";
+import { AssigneeNotInOrgError } from "@/server/errors/project-errors";
 
 export type CreateTaskData = {
   title: string;
   description?: string;
   status?: TaskStatus;
   tags?: string[];
+  assigneeUserId?: string | null;
 };
 
 /**
@@ -27,6 +31,23 @@ export async function createTask(
   // Verifica cross-tenant: projeto deve pertencer à org
   await getProject(ctx, projectId);
 
+  const taskCount = await countTasksByProject(ctx.orgId, projectId);
+  const limits = getPlanLimits(ctx.plan);
+  if (taskCount >= limits.maxTasksPerProject) {
+    throw new PlanLimitReachedError({
+      resource: "tasks_per_project",
+      limit: limits.maxTasksPerProject,
+      current: taskCount,
+      plan: ctx.plan,
+    });
+  }
+
+  // Valida que o assignee é membro desta org
+  if (data.assigneeUserId !== undefined && data.assigneeUserId !== null) {
+    const membership = await findMembership(data.assigneeUserId, ctx.orgId);
+    if (!membership) throw new AssigneeNotInOrgError();
+  }
+
   const task = await repoCreateTask({
     orgId: ctx.orgId,
     projectId,
@@ -34,6 +55,7 @@ export async function createTask(
     description: data.description,
     status: data.status,
     tags: data.tags,
+    assigneeUserId: data.assigneeUserId,
   });
 
   void logAudit({

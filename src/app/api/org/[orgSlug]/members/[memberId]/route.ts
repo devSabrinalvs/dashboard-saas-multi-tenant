@@ -9,15 +9,20 @@ import {
   MemberNotFoundError,
   LastOwnerError,
 } from "@/server/errors/team-errors";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 /**
  * DELETE /api/org/[orgSlug]/members/[memberId]
  * Success: 200 { ok: true }
  */
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ orgSlug: string; memberId: string }> }
 ) {
+  if (!validateCsrfRequest(req)) {
+    return NextResponse.json({ error: "Token CSRF inválido." }, { status: 403 });
+  }
+
   try {
     const { orgSlug, memberId } = await params;
     const ctx = await requireOrgContext(orgSlug);

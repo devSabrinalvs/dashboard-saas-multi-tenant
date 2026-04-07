@@ -119,3 +119,10 @@ export async function deleteMembership(
 export async function countOwners(orgId: string): Promise<number> {
   return prisma.membership.count({ where: { orgId, role: "OWNER" } });
 }
+
+/**
+ * Conta todos os membros ativos de uma org.
+ */
+export async function countMembers(orgId: string): Promise<number> {
+  return prisma.membership.count({ where: { orgId } });
+}

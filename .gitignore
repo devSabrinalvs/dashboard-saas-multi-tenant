@@ -9,10 +9,11 @@ out/
 # production
 build/
 
-# env files
+# env files — nunca commitar valores reais
 .env
 .env.local
 .env.*.local
+.env.test
 
 # debug
 npm-debug.log*
@@ -28,4 +29,8 @@ next-env.d.ts
 .DS_Store
 *.pem
 
+# prisma generated client
 /src/generated/prisma
+
+# claude code — configurações locais do editor
+.claude/

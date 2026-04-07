@@ -7,6 +7,7 @@ import {
 import { createInviteSchema } from "@/schemas/invite";
 import { createInvite } from "@/server/use-cases/create-invite";
 import { InviteDuplicateError } from "@/server/errors/team-errors";
+import { PlanLimitReachedError } from "@/billing/plan-limits";
 import { rateLimit } from "@/security/rate-limit/rate-limit";
 import { inviteKey } from "@/security/rate-limit/keys";
 import { RATE_LIMITS } from "@/security/rate-limit/constants";
@@ -52,6 +53,12 @@ export async function POST(
     }
     if (err instanceof InviteDuplicateError) {
       return NextResponse.json({ error: err.message }, { status: 409 });
+    }
+    if (err instanceof PlanLimitReachedError) {
+      return NextResponse.json(
+        { error: err.message, code: err.code, details: err.details },
+        { status: err.status }
+      );
     }
     throw err;
   }

@@ -22,3 +22,13 @@ export class TaskNotFoundError extends Error {
     Object.setPrototypeOf(this, TaskNotFoundError.prototype);
   }
 }
+
+export class AssigneeNotInOrgError extends Error {
+  readonly status = 400;
+
+  constructor() {
+    super("Responsável não é membro desta organização.");
+    this.name = "AssigneeNotInOrgError";
+    Object.setPrototypeOf(this, AssigneeNotInOrgError.prototype);
+  }
+}

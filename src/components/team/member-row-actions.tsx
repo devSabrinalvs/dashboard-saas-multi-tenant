@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import type { Role } from "@/generated/prisma/enums";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface MemberRowActionsProps {
   orgSlug: string;
@@ -58,7 +59,7 @@ export function MemberRowActions({
     setError(null);
     const res = await fetch(`/api/org/${orgSlug}/members/${memberId}/role`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders(),
       body: JSON.stringify({ role: newRole }),
     });
     setLoading(false);
@@ -76,6 +77,7 @@ export function MemberRowActions({
     setError(null);
     const res = await fetch(`/api/org/${orgSlug}/members/${memberId}`, {
       method: "DELETE",
+      headers: csrfHeaders(),
     });
     setLoading(false);
     if (res.ok) {

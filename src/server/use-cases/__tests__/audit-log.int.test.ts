@@ -31,6 +31,7 @@ function makeCtx(overrides: Partial<OrgContext> & { userId: string; orgId: strin
     orgSlug: "test-org",
     orgName: "Test Org",
     role: Role.OWNER,
+    plan: "FREE" as const,
     ...overrides,
   };
 }

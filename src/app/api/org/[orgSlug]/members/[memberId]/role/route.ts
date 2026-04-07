@@ -11,6 +11,7 @@ import {
   LastOwnerError,
   AdminCannotPromoteError,
 } from "@/server/errors/team-errors";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 /**
  * PATCH /api/org/[orgSlug]/members/[memberId]/role
@@ -21,6 +22,10 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ orgSlug: string; memberId: string }> }
 ) {
+  if (!validateCsrfRequest(req)) {
+    return NextResponse.json({ error: "Token CSRF inválido." }, { status: 403 });
+  }
+
   try {
     const { orgSlug, memberId } = await params;
     const ctx = await requireOrgContext(orgSlug);

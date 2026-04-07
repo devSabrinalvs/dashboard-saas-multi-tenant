@@ -7,6 +7,7 @@ import {
 import { projectCreateSchema, projectQuerySchema } from "@/schemas/project";
 import { listProjects } from "@/server/use-cases/list-projects";
 import { createProject } from "@/server/use-cases/create-project";
+import { PlanLimitReachedError } from "@/billing/plan-limits";
 import { rateLimit } from "@/security/rate-limit/rate-limit";
 import { mutationKey } from "@/security/rate-limit/keys";
 import { RATE_LIMITS } from "@/security/rate-limit/constants";
@@ -78,6 +79,12 @@ export async function POST(
   } catch (err) {
     if (err instanceof PermissionDeniedError) {
       return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    if (err instanceof PlanLimitReachedError) {
+      return NextResponse.json(
+        { error: err.message, code: err.code, details: err.details },
+        { status: err.status }
+      );
     }
     throw err;
   }

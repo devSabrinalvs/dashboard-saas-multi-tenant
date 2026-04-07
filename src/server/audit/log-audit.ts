@@ -13,7 +13,9 @@ export type AuditAction =
   | "project.deleted"
   | "task.created"
   | "task.updated"
-  | "task.deleted";
+  | "task.deleted"
+  | "data.exported"
+  | "data.imported";
 
 export interface LogAuditParams {
   orgId: string;

@@ -24,6 +24,8 @@ import {
 import { taskCreateSchema, type TaskCreateInput } from "@/schemas/task";
 import { useCreateTask } from "@/features/tasks/hooks/use-create-task";
 import { useUpdateTask } from "@/features/tasks/hooks/use-update-task";
+import { useOrgMembers } from "@/features/tasks/hooks/use-org-members";
+import { AssigneeSelector } from "./assignee-selector";
 import type { Task } from "@/server/repo/task-repo";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -53,6 +55,7 @@ export function TaskFormModal({
   const createMutation = useCreateTask(orgSlug, projectId);
   const updateMutation = useUpdateTask(orgSlug, projectId);
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const { data: members } = useOrgMembers(orgSlug);
 
   const [tagsInput, setTagsInput] = useState("");
 
@@ -70,11 +73,13 @@ export function TaskFormModal({
       description: task?.description ?? "",
       status: task?.status ?? "TODO",
       tags: task?.tags ?? [],
+      assigneeUserId: task?.assigneeUserId ?? null,
     },
   });
 
   const currentStatus = watch("status");
   const currentTags = watch("tags");
+  const currentAssignee = watch("assigneeUserId");
 
   useEffect(() => {
     if (open) {
@@ -83,6 +88,7 @@ export function TaskFormModal({
         description: task?.description ?? "",
         status: task?.status ?? "TODO",
         tags: task?.tags ?? [],
+        assigneeUserId: task?.assigneeUserId ?? null,
       });
       setTagsInput(task?.tags?.join(", ") ?? "");
     }
@@ -155,6 +161,16 @@ export function TaskFormModal({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="task-assignee">Responsável</Label>
+            <AssigneeSelector
+              members={members ?? []}
+              value={currentAssignee}
+              onChange={(userId) => setValue("assigneeUserId", userId)}
+              disabled={isPending}
+            />
           </div>
 
           <div className="space-y-1">

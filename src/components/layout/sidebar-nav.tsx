@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CreditCard,
+  Database,
   FolderKanban,
   LayoutDashboard,
   Settings,
@@ -23,6 +25,8 @@ interface SidebarNavProps {
   orgName: string;
   userOrgs: OrgLink[];
   canAudit?: boolean;
+  canBilling?: boolean;
+  canDataExport?: boolean;
 }
 
 export function SidebarNav({
@@ -30,6 +34,8 @@ export function SidebarNav({
   orgName,
   userOrgs,
   canAudit,
+  canBilling,
+  canDataExport,
 }: SidebarNavProps) {
   const pathname = usePathname();
   const base = `/org/${orgSlug}`;
@@ -42,6 +48,12 @@ export function SidebarNav({
       ? [{ href: `${base}/audit`, label: "Auditoria", icon: ShieldCheck }]
       : []),
     { href: `${base}/settings`, label: "Configurações", icon: Settings },
+    ...(canBilling
+      ? [{ href: `${base}/settings/billing`, label: "Plano & Uso", icon: CreditCard }]
+      : []),
+    ...(canDataExport
+      ? [{ href: `${base}/settings/data`, label: "Export / Import", icon: Database }]
+      : []),
   ];
 
   return (

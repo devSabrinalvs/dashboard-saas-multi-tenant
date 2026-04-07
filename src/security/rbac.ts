@@ -23,6 +23,8 @@ const OWNER_PERMISSIONS = new Set<Permission>([
   "task:delete",
   "audit:read",
   "billing:manage",
+  "data:export",
+  "data:import",
 ]);
 
 const ADMIN_PERMISSIONS = new Set<Permission>([
@@ -37,6 +39,8 @@ const ADMIN_PERMISSIONS = new Set<Permission>([
   "task:delete",
   "audit:read",
   // billing:manage: excluído — apenas OWNER
+  "data:export",
+  "data:import",
 ]);
 
 const MEMBER_PERMISSIONS = new Set<Permission>([

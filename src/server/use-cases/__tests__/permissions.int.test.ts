@@ -41,7 +41,7 @@ function makeCtx(
   org: { id: string; slug: string; name: string },
   role: Role
 ): OrgContext {
-  return { userId, email, orgId: org.id, orgSlug: org.slug, orgName: org.name, role };
+  return { userId, email, orgId: org.id, orgSlug: org.slug, orgName: org.name, role, plan: "FREE" };
 }
 
 // ─── VIEWER bloqueado ────────────────────────────────────────────────────────

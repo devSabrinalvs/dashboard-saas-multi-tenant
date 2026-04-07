@@ -11,6 +11,8 @@ export type TaskQuery = {
   search?: string;
   status?: TaskStatus;
   tag?: string;
+  /** Se fornecido, filtra tasks atribuídas a este userId */
+  assigneeUserId?: string;
   page: number;
   pageSize: number;
 };
@@ -35,6 +37,7 @@ export async function listTasksByProject(
     search: query.search,
     status: query.status,
     tag: query.tag,
+    assigneeUserId: query.assigneeUserId,
     page: query.page,
     pageSize: query.pageSize,
   });

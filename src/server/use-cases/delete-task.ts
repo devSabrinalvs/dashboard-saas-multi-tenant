@@ -17,7 +17,9 @@ export async function deleteTask(
   const existing = await findTaskById(taskId, ctx.orgId);
   if (!existing) throw new TaskNotFoundError();
 
-  const deleted = await repoDeleteTask(taskId);
+  // Repo também filtra por orgId (defense-in-depth duplo)
+  const deleted = await repoDeleteTask(taskId, ctx.orgId);
+  if (!deleted) throw new TaskNotFoundError();
 
   void logAudit({
     orgId: ctx.orgId,

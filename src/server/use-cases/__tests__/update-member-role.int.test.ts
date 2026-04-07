@@ -38,6 +38,7 @@ function makeCtx(
     orgSlug: org.slug,
     orgName: org.name,
     role,
+    plan: "FREE" as const,
   };
 }
 

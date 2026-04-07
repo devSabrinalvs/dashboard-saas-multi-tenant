@@ -5,151 +5,59 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  Users,
-  FolderKanban,
-  CheckSquare,
   BarChart3,
-  Check,
-  Building2,
-  Zap,
   Shield,
+  Lock,
+  Globe,
+  Server,
+  UserPlus,
+  Settings2,
+  Users,
+  Star,
+  FolderKanban,
+  Zap,
+  Building2,
+  TrendingUp,
+  Clock,
+  CheckSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const INTERVAL = 6000;
 
 // ---------------------------------------------------------------------------
-// Slide data types
+// Color tokens
 // ---------------------------------------------------------------------------
 
-interface MetricItem {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-}
-
-interface SlideData {
-  id: string;
-  type: "hero" | "dashboard" | "features";
-  headline: string;
-  subtitle: string;
-  metrics?: MetricItem[];
-  features?: string[];
-  ctaText?: string;
-  quote?: string;
-}
-
-// ---------------------------------------------------------------------------
-// Slide content data
-// ---------------------------------------------------------------------------
-
-const LOGIN_SLIDES: SlideData[] = [
-  {
-    id: "login-hero",
-    type: "hero",
-    headline: "Bem-vindo de volta",
-    subtitle:
-      "Acesse seu dashboard e acompanhe tudo que acontece na sua organização em tempo real.",
-    metrics: [
-      { icon: Users, label: "Usuários ativos", value: "1.248" },
-      { icon: FolderKanban, label: "Projetos", value: "34" },
-      { icon: CheckSquare, label: "Tarefas concluídas", value: "892" },
-    ],
-    ctaText: "Mais de 1.200 equipes confiam na plataforma",
-  },
-  {
-    id: "login-dashboard",
-    type: "dashboard",
-    headline: "Visibilidade total",
-    subtitle:
-      "Métricas em tempo real, audit log completo e controle granular de permissões.",
-    metrics: [
-      { icon: BarChart3, label: "Atividade hoje", value: "+128" },
-      { icon: Shield, label: "Eventos de segurança", value: "0" },
-      { icon: Zap, label: "Uptime", value: "99.9%" },
-    ],
-  },
-  {
-    id: "login-features",
-    type: "features",
-    headline: "Tudo que você precisa",
-    subtitle: "Uma plataforma completa para gerenciar equipes e projetos.",
-    features: [
-      "RBAC com 4 níveis de permissão",
-      "Rate limiting e proteção anti-bot",
-      "Audit log imutável de todas as ações",
-      "Multi-tenant com isolamento total",
-      "2FA com TOTP (em breve)",
-    ],
-    quote: "Segurança e produtividade no mesmo lugar.",
-  },
-];
-
-const SIGNUP_SLIDES: SlideData[] = [
-  {
-    id: "signup-hero",
-    type: "hero",
-    headline: "Crie seu workspace",
-    subtitle:
-      "Configure sua organização em minutos e convide sua equipe para colaborar em projetos.",
-    metrics: [
-      { icon: Building2, label: "Orgs criadas hoje", value: "47" },
-      { icon: Users, label: "Membros onboard", value: "203" },
-      { icon: FolderKanban, label: "Projetos iniciados", value: "89" },
-    ],
-    ctaText: "Setup completo em menos de 5 minutos",
-  },
-  {
-    id: "signup-dashboard",
-    type: "dashboard",
-    headline: "Dashboard pronto",
-    subtitle:
-      "Assim que criar sua conta, seu dashboard estará pronto para uso imediato.",
-    metrics: [
-      { icon: Zap, label: "Tempo de setup", value: "< 5min" },
-      { icon: Users, label: "Membros no plano", value: "Ilimitado" },
-      { icon: FolderKanban, label: "Projetos no plano", value: "Ilimitado" },
-    ],
-  },
-  {
-    id: "signup-features",
-    type: "features",
-    headline: "O que você vai ter",
-    subtitle: "Tudo incluso no cadastro, sem cartão de crédito necessário.",
-    features: [
-      "Organização com slug personalizado",
-      "Equipe com controle de permissões (RBAC)",
-      "Projetos e tarefas colaborativas",
-      "Audit log de todas as ações",
-      "Autenticação 2FA (em breve)",
-    ],
-    quote: "Grátis para começar. Cresça conforme precisar.",
-  },
-];
-
-const SLIDES: Record<"login" | "signup", SlideData[]> = {
-  login: LOGIN_SLIDES,
-  signup: SIGNUP_SLIDES,
-};
-
-// ---------------------------------------------------------------------------
-// Shared class tokens — light mode (dark bg) / dark mode (light bg)
-// ---------------------------------------------------------------------------
-
-// Card: glass on dark bg / solid white card on light bg
 const cardBg =
   "bg-white/8 dark:bg-black/5 dark:border dark:border-zinc-200/80";
-
-// Icon container
 const iconBg = "bg-white/12 dark:bg-zinc-200";
-
-// Text hierarchy
 const textPrimary = "text-white dark:text-zinc-900";
 const textSecondary = "text-white/65 dark:text-zinc-500";
 const textTertiary = "text-white/50 dark:text-zinc-400";
 
 // ---------------------------------------------------------------------------
-// Background decorative shapes — very subtle
+// Stagger animation variants
+// ---------------------------------------------------------------------------
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.09, delayChildren: 0.12 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Shared decorative components
 // ---------------------------------------------------------------------------
 
 function BackgroundShapes() {
@@ -165,22 +73,36 @@ function BackgroundShapes() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Fake bar chart
-// ---------------------------------------------------------------------------
+function Stars({ count = 5 }: { count?: number }) {
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: count }).map((_, i) => (
+        <Star
+          key={i}
+          className="size-4 fill-amber-400 text-amber-400 drop-shadow-sm"
+        />
+      ))}
+    </div>
+  );
+}
 
 function MiniBarChart() {
-  const bars = [40, 65, 50, 80, 60, 90, 72];
+  const bars = [35, 58, 45, 72, 55, 88, 68];
   return (
     <div
-      className="flex items-end gap-1 h-10"
+      className="flex items-end gap-[3px] h-9"
       role="img"
       aria-label="Gráfico de atividade"
     >
       {bars.map((h, i) => (
         <div
           key={i}
-          className="flex-1 rounded-sm bg-white/25 dark:bg-zinc-400"
+          className={cn(
+            "flex-1 rounded-sm transition-all",
+            i === bars.length - 1
+              ? "bg-white/50 dark:bg-zinc-500"
+              : "bg-white/20 dark:bg-zinc-300"
+          )}
           style={{ height: `${h}%` }}
         />
       ))}
@@ -189,239 +111,728 @@ function MiniBarChart() {
 }
 
 // ---------------------------------------------------------------------------
-// Avatar group — neutral palette
+// SLIDE 1 (LOGIN) — Testimonial
 // ---------------------------------------------------------------------------
 
-const AVATAR_SHADES = [
-  "bg-zinc-600 dark:bg-zinc-400",
-  "bg-zinc-500 dark:bg-zinc-500",
-  "bg-zinc-400 dark:bg-zinc-600",
-  "bg-zinc-300 dark:bg-zinc-700",
-];
-const AVATAR_INITIALS = ["M", "A", "J", "K"];
+interface TestimonialData {
+  type: "testimonial";
+  quote: string;
+  author: string;
+  role: string;
+  company: string;
+  initials: string;
+  avatarShade: string;
+  metric: string;
+  metricLabel: string;
+  metricIcon: React.ElementType;
+}
 
-function AvatarGroup() {
+function TestimonialSlide({ data }: { data: TestimonialData }) {
   return (
-    <div className="flex items-center">
-      {AVATAR_INITIALS.map((initial, i) => (
+    <motion.div
+      className="flex h-full flex-col justify-between"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      {/* Top section */}
+      <div className="space-y-5">
+        <motion.div variants={itemVariants}>
+          <Stars />
+        </motion.div>
+
+        {/* Quote */}
+        <motion.div variants={itemVariants} className="space-y-1">
+          <div
+            className={cn(
+              "text-[80px] leading-none font-serif select-none -mb-4",
+              "text-white/18 dark:text-zinc-300"
+            )}
+          >
+            &ldquo;
+          </div>
+          <blockquote
+            className={cn(
+              "text-xl font-medium leading-relaxed tracking-tight",
+              textPrimary
+            )}
+          >
+            {data.quote}
+          </blockquote>
+        </motion.div>
+
+        {/* Author */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3">
+          <div
+            className={cn(
+              "flex size-11 items-center justify-center rounded-full",
+              "border-2 border-white/20 dark:border-zinc-200",
+              "text-sm font-bold",
+              "text-white dark:text-zinc-900",
+              data.avatarShade
+            )}
+          >
+            {data.initials}
+          </div>
+          <div>
+            <p className={cn("text-sm font-semibold leading-tight", textPrimary)}>
+              {data.author}
+            </p>
+            <p className={cn("text-xs mt-0.5", textSecondary)}>
+              {data.role} &middot; {data.company}
+            </p>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Bottom — highlighted metric */}
+      <motion.div
+        variants={itemVariants}
+        className={cn("rounded-2xl p-5 flex items-center gap-5", cardBg)}
+      >
         <div
-          key={i}
           className={cn(
-            "flex size-7 items-center justify-center rounded-full border-2",
-            "border-zinc-800 dark:border-zinc-100",
-            "text-xs font-bold text-white dark:text-zinc-900",
-            AVATAR_SHADES[i],
-            i > 0 && "-ml-2"
+            "flex size-14 items-center justify-center rounded-xl shrink-0",
+            iconBg
           )}
-          aria-hidden
         >
-          {initial}
+          <data.metricIcon
+            className={cn("size-7", "text-white/70 dark:text-zinc-600")}
+          />
         </div>
-      ))}
-      <span className={cn("ml-3 text-xs", textSecondary)}>+1.2k usuários</span>
-    </div>
+        <div>
+          <p className={cn("text-4xl font-bold tabular-nums leading-none", textPrimary)}>
+            {data.metric}
+          </p>
+          <p className={cn("text-xs mt-1.5", textSecondary)}>
+            {data.metricLabel}
+          </p>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Slide components
+// SLIDE 2 (LOGIN) — Security / compliance
 // ---------------------------------------------------------------------------
 
-function HeroSlide({ slide }: { slide: SlideData }) {
+interface SecurityBadge {
+  icon: React.ElementType;
+  label: string;
+  sublabel: string;
+}
+
+interface SecurityData {
+  type: "security";
+  headline: string;
+  subtitle: string;
+  badges: SecurityBadge[];
+  stats: { value: string; label: string }[];
+}
+
+function SecuritySlide({ data }: { data: SecurityData }) {
   return (
-    <div className="flex h-full flex-col justify-between">
-      <div className="space-y-6">
-        <div className="space-y-3">
+    <motion.div
+      className="flex h-full flex-col justify-between"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="space-y-5">
+        <motion.div variants={itemVariants} className="space-y-2">
           <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
-            {slide.headline}
+            {data.headline}
           </h2>
           <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
-            {slide.subtitle}
+            {data.subtitle}
           </p>
-        </div>
+        </motion.div>
 
-        {slide.metrics && (
-          <div className="space-y-2">
-            {slide.metrics.map((m) => (
-              <motion.div
-                key={m.label}
-                whileHover={{ scale: 1.02 }}
+        {/* 2×2 badge grid */}
+        <div className="grid grid-cols-2 gap-2">
+          {data.badges.map((badge) => (
+            <motion.div
+              key={badge.label}
+              variants={itemVariants}
+              className={cn("rounded-xl p-4 flex items-center gap-3", cardBg)}
+            >
+              <div
                 className={cn(
-                  "rounded-xl px-4 py-3 flex items-center gap-3",
-                  cardBg
+                  "flex size-9 items-center justify-center rounded-lg shrink-0",
+                  iconBg
                 )}
               >
-                <div
+                <badge.icon
+                  className={cn("size-4", "text-white/70 dark:text-zinc-600")}
+                />
+              </div>
+              <div className="min-w-0">
+                <p
                   className={cn(
-                    "flex size-8 items-center justify-center rounded-md shrink-0",
-                    iconBg
+                    "text-xs font-semibold truncate leading-tight",
+                    textPrimary
                   )}
                 >
-                  <m.icon
-                    className={cn(
-                      "size-4",
-                      "text-white/80 dark:text-zinc-600"
-                    )}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className={cn("text-xs truncate", textTertiary)}>
-                    {m.label}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-lg font-bold tabular-nums leading-tight",
-                      textPrimary
-                    )}
-                  >
-                    {m.value}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                  {badge.label}
+                </p>
+                <p className={cn("text-[10px] truncate mt-0.5", textTertiary)}>
+                  {badge.sublabel}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Stats strip */}
+        <motion.div
+          variants={itemVariants}
+          className={cn("rounded-xl p-4 flex items-center", cardBg)}
+        >
+          {data.stats.map((s, i) => (
+            <div
+              key={s.label}
+              className={cn(
+                "flex-1 text-center",
+                i > 0 && "border-l border-white/10 dark:border-zinc-200"
+              )}
+            >
+              <p
+                className={cn(
+                  "text-2xl font-bold tabular-nums leading-none",
+                  textPrimary
+                )}
+              >
+                {s.value}
+              </p>
+              <p className={cn("text-[10px] mt-1", textTertiary)}>{s.label}</p>
+            </div>
+          ))}
+        </motion.div>
       </div>
 
-      {/* CTA card */}
-      {slide.ctaText && (
+      {/* Footer note */}
+      <motion.div
+        variants={itemVariants}
+        className="flex items-center gap-2.5"
+      >
         <div
           className={cn(
-            "rounded-xl border p-4 space-y-3",
-            "bg-white/5 border-white/10",
-            "dark:bg-zinc-100 dark:border-zinc-200"
+            "flex size-6 items-center justify-center rounded-full shrink-0",
+            iconBg
           )}
         >
-          <AvatarGroup />
-          <p className={cn("text-sm font-medium", textPrimary)}>
-            {slide.ctaText}
-          </p>
+          <Lock
+            className={cn("size-3", "text-white/70 dark:text-zinc-600")}
+          />
         </div>
-      )}
-    </div>
+        <p className={cn("text-xs", textTertiary)}>
+          Dados criptografados em repouso e em trânsito — AES-256 + TLS 1.3
+        </p>
+      </motion.div>
+    </motion.div>
   );
 }
 
-function DashboardSlide({ slide }: { slide: SlideData }) {
+// ---------------------------------------------------------------------------
+// SLIDE 3 (LOGIN) — Features list
+// ---------------------------------------------------------------------------
+
+interface FeatureItem {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}
+
+interface FeaturesData {
+  type: "features";
+  headline: string;
+  subtitle: string;
+  features: FeatureItem[];
+  quote?: string;
+}
+
+function FeaturesSlide({ data }: { data: FeaturesData }) {
   return (
-    <div className="flex h-full flex-col justify-between">
-      <div className="space-y-6">
-        <div className="space-y-3">
+    <motion.div
+      className="flex h-full flex-col justify-between"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="space-y-5">
+        <motion.div variants={itemVariants} className="space-y-2">
           <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
-            {slide.headline}
+            {data.headline}
           </h2>
           <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
-            {slide.subtitle}
+            {data.subtitle}
           </p>
-        </div>
+        </motion.div>
 
-        {slide.metrics && (
-          <div className="grid grid-cols-2 gap-2">
-            {slide.metrics.map((m) => (
-              <motion.div
-                key={m.label}
-                whileHover={{ scale: 1.03 }}
-                className={cn("rounded-xl p-3 space-y-1", cardBg)}
-              >
-                <div className="flex items-center gap-1.5">
-                  <m.icon
-                    className={cn("size-3.5", "text-white/50 dark:text-zinc-400")}
-                  />
-                  <p className={cn("text-xs truncate", textTertiary)}>
-                    {m.label}
-                  </p>
-                </div>
-                <p className={cn("text-xl font-bold tabular-nums", textPrimary)}>
-                  {m.value}
-                </p>
-              </motion.div>
-            ))}
-
-            {/* Chart card */}
+        <div className="space-y-2">
+          {data.features.map((f) => (
             <motion.div
-              whileHover={{ scale: 1.01 }}
-              className={cn("col-span-2 rounded-xl p-3 space-y-2", cardBg)}
+              key={f.title}
+              variants={itemVariants}
+              className={cn(
+                "rounded-xl px-4 py-3.5 flex items-center gap-3",
+                cardBg
+              )}
             >
-              <p className={cn("text-xs", textTertiary)}>
-                Atividade — últimos 7 dias
-              </p>
-              <MiniBarChart />
-            </motion.div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FeaturesSlide({ slide }: { slide: SlideData }) {
-  return (
-    <div className="flex h-full flex-col justify-between">
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
-            {slide.headline}
-          </h2>
-          <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
-            {slide.subtitle}
-          </p>
-        </div>
-
-        {slide.features && (
-          <div className={cn("rounded-xl p-4 space-y-3", cardBg)}>
-            {slide.features.map((feature, i) => (
-              <motion.div
-                key={feature}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="flex items-center gap-3"
+              <div
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-lg shrink-0",
+                  iconBg
+                )}
               >
-                <div
+                <f.icon
+                  className={cn("size-4", "text-white/70 dark:text-zinc-600")}
+                />
+              </div>
+              <div className="min-w-0">
+                <p
                   className={cn(
-                    "flex size-5 items-center justify-center rounded-full shrink-0",
-                    iconBg
+                    "text-sm font-semibold truncate leading-tight",
+                    textPrimary
                   )}
                 >
-                  <Check
-                    className={cn(
-                      "size-3",
-                      "text-white/80 dark:text-zinc-600"
-                    )}
-                    strokeWidth={3}
-                  />
-                </div>
-                <span className={cn("text-sm", textSecondary)}>{feature}</span>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                  {f.title}
+                </p>
+                <p className={cn("text-xs mt-0.5 truncate", textTertiary)}>
+                  {f.description}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
-      {slide.quote && (
-        <blockquote className="border-l-2 border-white/20 dark:border-zinc-300 pl-4">
+      {data.quote && (
+        <motion.div
+          variants={itemVariants}
+          className="border-l-2 border-white/20 dark:border-zinc-300 pl-4"
+        >
           <p
             className={cn(
-              "text-sm italic",
+              "text-sm italic leading-relaxed",
               "text-white/60 dark:text-zinc-500"
             )}
           >
-            {slide.quote}
+            {data.quote}
           </p>
-        </blockquote>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
-function SlideContent({ slide }: { slide: SlideData }) {
-  if (slide.type === "hero") return <HeroSlide slide={slide} />;
-  if (slide.type === "dashboard") return <DashboardSlide slide={slide} />;
-  return <FeaturesSlide slide={slide} />;
+// ---------------------------------------------------------------------------
+// SLIDE 1 (SIGNUP) — Steps "Como funciona"
+// ---------------------------------------------------------------------------
+
+interface StepItem {
+  icon: React.ElementType;
+  number: string;
+  title: string;
+  description: string;
+}
+
+interface StepsData {
+  type: "steps";
+  headline: string;
+  subtitle: string;
+  steps: StepItem[];
+  footer: string;
+}
+
+function StepsSlide({ data }: { data: StepsData }) {
+  return (
+    <motion.div
+      className="flex h-full flex-col justify-between"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="space-y-5">
+        <motion.div variants={itemVariants} className="space-y-2">
+          <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
+            {data.headline}
+          </h2>
+          <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
+            {data.subtitle}
+          </p>
+        </motion.div>
+
+        <div className="space-y-2">
+          {data.steps.map((step, i) => (
+            <motion.div key={step.number} variants={itemVariants}>
+              <div
+                className={cn("rounded-xl px-4 py-4 flex items-start gap-4", cardBg)}
+              >
+                {/* Icon + connecting line */}
+                <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+                  <div
+                    className={cn(
+                      "flex size-9 items-center justify-center rounded-lg",
+                      iconBg
+                    )}
+                  >
+                    <step.icon
+                      className={cn(
+                        "size-4",
+                        "text-white/70 dark:text-zinc-600"
+                      )}
+                    />
+                  </div>
+                  {i < data.steps.length - 1 && (
+                    <div className="w-px h-3 bg-white/12 dark:bg-zinc-300" />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-widest",
+                      textTertiary
+                    )}
+                  >
+                    Passo {step.number}
+                  </span>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold leading-tight mt-0.5",
+                      textPrimary
+                    )}
+                  >
+                    {step.title}
+                  </p>
+                  <p className={cn("text-xs mt-0.5", textTertiary)}>
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <motion.div
+        variants={itemVariants}
+        className={cn("rounded-xl p-4 flex items-center gap-3", cardBg)}
+      >
+        <div
+          className={cn(
+            "flex size-8 items-center justify-center rounded-md shrink-0",
+            iconBg
+          )}
+        >
+          <Clock
+            className={cn("size-4", "text-white/70 dark:text-zinc-600")}
+          />
+        </div>
+        <p className={cn("text-sm font-medium", textPrimary)}>{data.footer}</p>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Slide transition variants
+// SLIDE 2 (SIGNUP) — Metrics / social proof
+// ---------------------------------------------------------------------------
+
+interface MetricItem {
+  icon: React.ElementType;
+  value: string;
+  label: string;
+  trend?: string;
+}
+
+interface MetricsData {
+  type: "metrics";
+  headline: string;
+  subtitle: string;
+  mainValue: string;
+  mainLabel: string;
+  mainIcon: React.ElementType;
+  items: MetricItem[];
+}
+
+function MetricsSlide({ data }: { data: MetricsData }) {
+  return (
+    <motion.div
+      className="flex h-full flex-col justify-between"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="space-y-5">
+        <motion.div variants={itemVariants} className="space-y-2">
+          <h2 className={cn("text-3xl font-bold leading-tight", textPrimary)}>
+            {data.headline}
+          </h2>
+          <p className={cn("text-sm leading-relaxed max-w-xs", textSecondary)}>
+            {data.subtitle}
+          </p>
+        </motion.div>
+
+        {/* Hero metric */}
+        <motion.div
+          variants={itemVariants}
+          className={cn("rounded-2xl p-5 flex items-center gap-5", cardBg)}
+        >
+          <div
+            className={cn(
+              "flex size-14 items-center justify-center rounded-xl shrink-0",
+              iconBg
+            )}
+          >
+            <data.mainIcon
+              className={cn("size-7", "text-white/70 dark:text-zinc-600")}
+            />
+          </div>
+          <div>
+            <p
+              className={cn(
+                "text-4xl font-bold tabular-nums leading-none",
+                textPrimary
+              )}
+            >
+              {data.mainValue}
+            </p>
+            <p className={cn("text-xs mt-1.5", textSecondary)}>
+              {data.mainLabel}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Grid metrics */}
+        <div className="grid grid-cols-2 gap-2">
+          {data.items.map((m) => (
+            <motion.div
+              key={m.label}
+              variants={itemVariants}
+              className={cn("rounded-xl p-3.5 space-y-1", cardBg)}
+            >
+              <div className="flex items-center gap-1.5">
+                <m.icon
+                  className={cn("size-3.5", "text-white/50 dark:text-zinc-400")}
+                />
+                <p className={cn("text-[10px] truncate", textTertiary)}>
+                  {m.label}
+                </p>
+              </div>
+              <p
+                className={cn(
+                  "text-xl font-bold tabular-nums leading-tight",
+                  textPrimary
+                )}
+              >
+                {m.value}
+              </p>
+              {m.trend && (
+                <p className="text-[10px] text-emerald-400 dark:text-emerald-600 font-semibold">
+                  {m.trend}
+                </p>
+              )}
+            </motion.div>
+          ))}
+
+          {/* Activity chart */}
+          <motion.div
+            variants={itemVariants}
+            className={cn("col-span-2 rounded-xl p-3.5 space-y-2", cardBg)}
+          >
+            <p className={cn("text-xs", textTertiary)}>
+              Atividade — últimos 7 dias
+            </p>
+            <MiniBarChart />
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Slide data
+// ---------------------------------------------------------------------------
+
+type AnySlide =
+  | TestimonialData
+  | SecurityData
+  | FeaturesData
+  | StepsData
+  | MetricsData;
+
+const LOGIN_SLIDES: AnySlide[] = [
+  {
+    type: "testimonial",
+    quote:
+      "Reduzimos reuniões de status em 60% no primeiro mês. O audit log nos salvou em duas auditorias internas.",
+    author: "Ana Costa",
+    role: "CTO",
+    company: "Fintech XYZ",
+    initials: "AC",
+    avatarShade: "bg-zinc-600 dark:bg-zinc-400",
+    metric: "−60%",
+    metricLabel: "Tempo gasto em reuniões de alinhamento de equipe",
+    metricIcon: TrendingUp,
+  },
+  {
+    type: "security",
+    headline: "Segurança enterprise",
+    subtitle:
+      "Construída para equipes que levam dados a sério — conformidade, criptografia e monitoramento 24/7.",
+    badges: [
+      { icon: Shield, label: "SOC 2 Type II", sublabel: "Auditoria anual" },
+      { icon: Globe, label: "LGPD / GDPR", sublabel: "Dados no Brasil e UE" },
+      {
+        icon: Server,
+        label: "ISO 27001",
+        sublabel: "Gestão de segurança",
+      },
+      {
+        icon: Lock,
+        label: "E2E Encryption",
+        sublabel: "AES-256 + TLS 1.3",
+      },
+    ],
+    stats: [
+      { value: "99.9%", label: "Uptime SLA" },
+      { value: "0", label: "Brechas em 2024" },
+      { value: "<50ms", label: "P99 latência" },
+    ],
+  },
+  {
+    type: "features",
+    headline: "Tudo que você precisa",
+    subtitle: "Uma plataforma completa para equipes modernas.",
+    features: [
+      {
+        icon: Shield,
+        title: "RBAC granular",
+        description: "4 níveis: Owner, Admin, Member, Guest",
+      },
+      {
+        icon: BarChart3,
+        title: "Audit log imutável",
+        description: "Rastreie cada ação da sua organização",
+      },
+      {
+        icon: Users,
+        title: "Multi-tenant",
+        description: "Isolamento total entre organizações",
+      },
+      {
+        icon: Zap,
+        title: "Rate limiting",
+        description: "Proteção automática contra abusos",
+      },
+    ],
+    quote: "Segurança e produtividade no mesmo lugar.",
+  },
+];
+
+const SIGNUP_SLIDES: AnySlide[] = [
+  {
+    type: "steps",
+    headline: "Configure em minutos",
+    subtitle:
+      "Três passos simples para sua equipe estar colaborando em projetos.",
+    steps: [
+      {
+        icon: UserPlus,
+        number: "1",
+        title: "Crie sua conta",
+        description: "Email + senha. Sem cartão de crédito necessário.",
+      },
+      {
+        icon: Settings2,
+        number: "2",
+        title: "Configure seu workspace",
+        description: "Defina o slug, permissões e perfil da organização.",
+      },
+      {
+        icon: Users,
+        number: "3",
+        title: "Convide sua equipe",
+        description: "Envie convites por email com funções pré-definidas.",
+      },
+    ],
+    footer: "Setup completo em menos de 5 minutos",
+  },
+  {
+    type: "metrics",
+    headline: "Crescendo todo dia",
+    subtitle: "Equipes de todo o Brasil confiam na plataforma.",
+    mainValue: "4.200+",
+    mainLabel: "Organizações ativas na plataforma",
+    mainIcon: Building2,
+    items: [
+      {
+        icon: Users,
+        value: "23k+",
+        label: "Membros ativos",
+        trend: "↑ 18% este mês",
+      },
+      {
+        icon: FolderKanban,
+        value: "89k+",
+        label: "Projetos criados",
+        trend: "↑ 12% este mês",
+      },
+      { icon: CheckSquare, value: "340k", label: "Tarefas entregues" },
+      { icon: Zap, value: "99.9%", label: "Uptime histórico" },
+    ],
+  },
+  {
+    type: "features",
+    headline: "O que você vai ter",
+    subtitle: "Tudo incluso no cadastro, sem cartão de crédito.",
+    features: [
+      {
+        icon: Building2,
+        title: "Org com slug personalizado",
+        description: "Seu workspace com URL exclusiva",
+      },
+      {
+        icon: Shield,
+        title: "RBAC completo",
+        description: "Controle quem pode ver e fazer o quê",
+      },
+      {
+        icon: FolderKanban,
+        title: "Projetos ilimitados",
+        description: "Sem limites no plano gratuito",
+      },
+      {
+        icon: BarChart3,
+        title: "Audit log completo",
+        description: "Histórico de todas as ações",
+      },
+    ],
+    quote: "Grátis para começar. Cresça conforme precisar.",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Slide router
+// ---------------------------------------------------------------------------
+
+function SlideContent({ slide }: { slide: AnySlide }) {
+  if (slide.type === "testimonial")
+    return <TestimonialSlide data={slide} />;
+  if (slide.type === "security") return <SecuritySlide data={slide} />;
+  if (slide.type === "features") return <FeaturesSlide data={slide} />;
+  if (slide.type === "steps") return <StepsSlide data={slide} />;
+  if (slide.type === "metrics") return <MetricsSlide data={slide} />;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Slide transitions
 // ---------------------------------------------------------------------------
 
 const slideVariants = {
@@ -444,6 +855,11 @@ const slideTransition = {
 // ---------------------------------------------------------------------------
 // AuthCarousel
 // ---------------------------------------------------------------------------
+
+const SLIDES: Record<"login" | "signup", AnySlide[]> = {
+  login: LOGIN_SLIDES,
+  signup: SIGNUP_SLIDES,
+};
 
 interface AuthCarouselProps {
   mode: "login" | "signup";
@@ -490,9 +906,7 @@ export function AuthCarousel({ mode }: AuthCarouselProps) {
     <div
       className={cn(
         "relative h-full overflow-hidden",
-        // Light mode: near-black
         "bg-zinc-950",
-        // Dark mode: near-white (inversion)
         "dark:bg-zinc-50"
       )}
       onMouseEnter={() => setPaused(true)}

@@ -13,4 +13,6 @@ export type Permission =
   | "task:update"
   | "task:delete"
   | "audit:read"
-  | "billing:manage";
+  | "billing:manage"
+  | "data:export"
+  | "data:import";

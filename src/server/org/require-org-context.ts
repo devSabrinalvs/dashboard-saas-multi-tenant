@@ -3,6 +3,7 @@ import { requireAuth } from "@/server/auth/require-auth";
 import { findOrgBySlug } from "@/server/repo/organization-repo";
 import { findMembership } from "@/server/repo/membership-repo";
 import type { Role } from "@/generated/prisma/client";
+import type { Plan } from "@/generated/prisma/enums";
 
 export type OrgContext = {
   userId: string;
@@ -10,8 +11,10 @@ export type OrgContext = {
   orgId: string;
   orgSlug: string;
   orgName: string;
-  /** Role do usuário nesta organização. RBAC completo vem na Etapa 4. */
+  /** Role do usuário nesta organização. */
   role: Role;
+  /** Plano ativo da organização — usado para enforcement de limites. */
+  plan: Plan;
 };
 
 /**
@@ -41,5 +44,6 @@ export async function requireOrgContext(orgSlug: string): Promise<OrgContext> {
     orgSlug: org.slug,
     orgName: org.name,
     role: membership.role,
+    plan: org.plan,
   };
 }

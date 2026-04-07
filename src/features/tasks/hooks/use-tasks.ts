@@ -6,6 +6,8 @@ export type TasksQueryParams = {
   search?: string;
   status?: string;
   tag?: string;
+  /** "me" = filtrar por tasks atribuídas ao usuário autenticado */
+  assignedTo?: "me";
   page?: number;
   pageSize?: number;
 };

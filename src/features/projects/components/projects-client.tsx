@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { ProjectFormModal } from "./project-form-modal";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useDeleteProject } from "@/features/projects/hooks/use-delete-project";
@@ -34,7 +35,7 @@ export function ProjectsClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>();
 
-  const { data, isLoading, error } = useProjects(orgSlug, {
+  const { data, isLoading, error, refetch } = useProjects(orgSlug, {
     search: search || undefined,
     page,
     pageSize,
@@ -101,22 +102,33 @@ export function ProjectsClient({
 
       {/* Error */}
       {error && (
-        <p className="text-sm text-destructive">
-          Erro ao carregar projetos: {error.message}
-        </p>
+        <ErrorState
+          description={`Erro ao carregar projetos: ${error.message}`}
+          onRetry={() => void refetch()}
+        />
       )}
 
       {/* Empty */}
       {!isLoading && !error && data?.items.length === 0 && (
         <EmptyState
           icon={Folder}
-          title="Nenhum projeto encontrado"
+          title={search ? "Nenhum projeto encontrado" : "Nenhum projeto ainda"}
           subtitle={
             search
               ? `Nenhum projeto corresponde a "${search}"`
-              : canCreate
-                ? `Crie o primeiro projeto clicando em "Novo Projeto"`
-                : undefined
+              : "Crie seu primeiro projeto para começar a organizar o trabalho da equipe."
+          }
+          action={
+            !search && canCreate ? (
+              <Button
+                size="sm"
+                onClick={handleNew}
+                data-testid="empty-state-cta"
+              >
+                <Plus className="size-4" />
+                Criar primeiro projeto
+              </Button>
+            ) : undefined
           }
         />
       )}

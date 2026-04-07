@@ -55,6 +55,13 @@ export async function listProjects(
 }
 
 /**
+ * Conta o total de projetos de uma org.
+ */
+export async function countProjects(orgId: string): Promise<number> {
+  return prisma.project.count({ where: { orgId } });
+}
+
+/**
  * Cria um projeto para a organização.
  */
 export async function createProject(data: {
@@ -79,21 +86,36 @@ export async function findProjectById(
 }
 
 /**
- * Atualiza projeto por id.
+ * Atualiza projeto por id com proteção cross-tenant (defense-in-depth).
+ * WHERE inclui orgId para garantir que mesmo chamadas diretas ao repo
+ * não consigam atualizar projetos de outras orgs.
+ * Retorna null se o projeto não existir ou não pertencer à org.
  */
 export async function updateProject(
   projectId: string,
+  orgId: string,
   data: { name?: string; description?: string | null }
-): Promise<Project> {
-  return prisma.project.update({
-    where: { id: projectId },
+): Promise<Project | null> {
+  const { count } = await prisma.project.updateMany({
+    where: { id: projectId, orgId },
     data,
   });
+  if (count === 0) return null;
+  return prisma.project.findFirst({ where: { id: projectId, orgId } });
 }
 
 /**
- * Deleta projeto por id (hard delete).
+ * Deleta projeto por id com proteção cross-tenant (defense-in-depth).
+ * WHERE inclui orgId para garantir isolamento.
+ * Retorna null se o projeto não existir ou não pertencer à org.
  */
-export async function deleteProject(projectId: string): Promise<Project> {
-  return prisma.project.delete({ where: { id: projectId } });
+export async function deleteProject(
+  projectId: string,
+  orgId: string
+): Promise<Project | null> {
+  // findFirst verifica a pertença antes do delete (orgId na query)
+  const project = await prisma.project.findFirst({ where: { id: projectId, orgId } });
+  if (!project) return null;
+  await prisma.project.delete({ where: { id: projectId } });
+  return project;
 }

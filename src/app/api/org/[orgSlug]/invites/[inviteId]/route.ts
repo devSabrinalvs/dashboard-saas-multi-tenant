@@ -6,15 +6,20 @@ import {
 } from "@/security/assert-permission";
 import { revokeInvite } from "@/server/use-cases/revoke-invite";
 import { InviteNotFoundError } from "@/server/errors/team-errors";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 /**
  * DELETE /api/org/[orgSlug]/invites/[inviteId]
  * Success: 200 { ok: true }
  */
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ orgSlug: string; inviteId: string }> }
 ) {
+  if (!validateCsrfRequest(req)) {
+    return NextResponse.json({ error: "Token CSRF inválido." }, { status: 403 });
+  }
+
   try {
     const { orgSlug, inviteId } = await params;
     const ctx = await requireOrgContext(orgSlug);

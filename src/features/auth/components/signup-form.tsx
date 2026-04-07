@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Check, X, Loader2, Info } from "lucide-react";
+import { Check, X, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TurnstileWidget } from "./turnstile-widget";
 import { cn } from "@/lib/utils";
 
+// Client-side schema (mirrors server signupSchema without turnstileToken)
 const signupSchema = z
   .object({
     name: z.string().optional(),
@@ -76,8 +78,12 @@ function PasswordStrengthIndicator({ value }: { value: string }) {
 }
 
 export function SignupForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const {
     register,
@@ -90,10 +96,46 @@ export function SignupForm() {
 
   const passwordValue = watch("password") ?? "";
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function onSubmit(_: SignupFormData) {
-    // UI-only — backend will be implemented in Etapa B
-    setSubmitted(true);
+  async function onSubmit(data: SignupFormData) {
+    setServerError(null);
+
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.name || undefined,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        turnstileToken: turnstileToken ?? "",
+      }),
+    });
+
+    if (res.status === 201) {
+      router.push(
+        `/verify-email/pending?email=${encodeURIComponent(data.email)}`
+      );
+      return;
+    }
+
+    // Resetar Turnstile em caso de erro (token é single-use)
+    setTurnstileKey((k) => k + 1);
+    setTurnstileToken(null);
+
+    if (res.status === 409) {
+      setServerError("Este email já está cadastrado.");
+      return;
+    }
+    if (res.status === 400) {
+      setServerError("Verificação anti-bot falhou. Tente novamente.");
+      return;
+    }
+    if (res.status === 429) {
+      setServerError("Muitas tentativas. Tente novamente mais tarde.");
+      return;
+    }
+
+    setServerError("Erro ao criar conta. Tente novamente.");
   }
 
   return (
@@ -105,20 +147,6 @@ export function SignupForm() {
           Configure seu workspace em poucos minutos.
         </p>
       </div>
-
-      {/* Etapa B banner */}
-      {submitted && (
-        <div
-          className="flex items-start gap-2.5 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-foreground"
-          role="status"
-        >
-          <Info className="size-4 mt-0.5 shrink-0" aria-hidden />
-          <span>
-            <strong>Em breve!</strong> O cadastro completo será implementado na
-            Etapa B, com verificação de email e criação de organização.
-          </span>
-        </div>
-      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -163,15 +191,26 @@ export function SignupForm() {
         {/* Password */}
         <div className="space-y-1.5">
           <Label htmlFor="signup-password">Senha</Label>
-          <Input
-            id="signup-password"
-            type="password"
-            placeholder="••••••••"
-            autoComplete="new-password"
-            aria-invalid={!!errors.password}
-            data-testid="signup-password"
-            {...register("password")}
-          />
+          <div className="relative">
+            <Input
+              id="signup-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              data-testid="signup-password"
+              className="pr-10"
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
           <PasswordStrengthIndicator value={passwordValue} />
           {errors.password && (
             <p className="text-xs text-destructive" role="alert">
@@ -183,15 +222,26 @@ export function SignupForm() {
         {/* Confirm password */}
         <div className="space-y-1.5">
           <Label htmlFor="signup-confirm">Confirmar senha</Label>
-          <Input
-            id="signup-confirm"
-            type="password"
-            placeholder="••••••••"
-            autoComplete="new-password"
-            aria-invalid={!!errors.confirmPassword}
-            data-testid="signup-confirm"
-            {...register("confirmPassword")}
-          />
+          <div className="relative">
+            <Input
+              id="signup-confirm"
+              type={showConfirm ? "text" : "password"}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              aria-invalid={!!errors.confirmPassword}
+              data-testid="signup-confirm"
+              className="pr-10"
+              {...register("confirmPassword")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showConfirm ? "Ocultar confirmação" : "Mostrar confirmação"}
+            >
+              {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
           {errors.confirmPassword && (
             <p className="text-xs text-destructive" role="alert">
               {errors.confirmPassword.message}
@@ -199,18 +249,27 @@ export function SignupForm() {
           )}
         </div>
 
+        {/* Server error */}
+        {serverError && (
+          <div
+            className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+            role="alert"
+          >
+            <AlertCircle className="size-4 mt-0.5 shrink-0" />
+            <span>{serverError}</span>
+          </div>
+        )}
+
         <TurnstileWidget
+          key={turnstileKey}
           onToken={(t) => setTurnstileToken(t)}
           onExpire={() => setTurnstileToken(null)}
         />
 
-        {/* Hidden field to include turnstileToken in payload (Etapa B will use it) */}
-        <input type="hidden" value={turnstileToken ?? ""} name="turnstileToken" />
-
         <Button
           type="submit"
           className="w-full bg-foreground text-background hover:bg-foreground/90"
-          disabled={isSubmitting || submitted}
+          disabled={isSubmitting}
           data-testid="signup-submit"
         >
           {isSubmitting ? (

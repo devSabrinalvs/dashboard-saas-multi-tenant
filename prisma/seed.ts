@@ -27,6 +27,14 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 
+/** Pepper idêntico ao usado em src/server/auth/password.ts */
+const PEPPER = process.env.PASSWORD_PEPPER ?? "";
+
+/** Hash bcrypt com pepper — igual ao hashPassword() do server. */
+async function hashPw(plain: string): Promise<string> {
+  return bcrypt.hash(plain + PEPPER, 12);
+}
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
@@ -45,14 +53,16 @@ async function main() {
   }
 
   // ── 1. Usuário ──────────────────────────────────────────────────────────────
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await hashPw(password);
+  const seedEmailVerified = new Date();
   const user = await prisma.user.upsert({
     where: { email },
-    update: { password: hashedPassword },
+    update: { password: hashedPassword, emailVerified: seedEmailVerified },
     create: {
       email,
       name: "Usuário de Teste",
       password: hashedPassword,
+      emailVerified: seedEmailVerified,
     },
   });
   console.log(`✓ Usuário:       ${user.email} (id: ${user.id})`);
@@ -96,13 +106,15 @@ async function main() {
   console.log(`✓ Membership:    OWNER em ${acme.slug}`);
 
   // ── 3c. Usuário MEMBER em acme ──────────────────────────────────────────────
+  const memberPw = await hashPw("membro123");
   const memberUser = await prisma.user.upsert({
     where: { email: "member@example.com" },
-    update: { password: await bcrypt.hash("membro123", 12) },
+    update: { password: memberPw, emailVerified: seedEmailVerified },
     create: {
       email: "member@example.com",
       name: "Usuário Membro",
-      password: await bcrypt.hash("membro123", 12),
+      password: memberPw,
+      emailVerified: seedEmailVerified,
     },
   });
   console.log(`✓ Usuário:       ${memberUser.email} (id: ${memberUser.id})`);
@@ -115,13 +127,15 @@ async function main() {
   console.log(`✓ Membership:    MEMBER em ${acme.slug}`);
 
   // ── 3d. Usuário VIEWER em acme ──────────────────────────────────────────────
+  const viewerPw = await hashPw("viewer123");
   const viewerUser = await prisma.user.upsert({
     where: { email: "viewer@example.com" },
-    update: { password: await bcrypt.hash("viewer123", 12) },
+    update: { password: viewerPw, emailVerified: seedEmailVerified },
     create: {
       email: "viewer@example.com",
       name: "Usuário Viewer",
-      password: await bcrypt.hash("viewer123", 12),
+      password: viewerPw,
+      emailVerified: seedEmailVerified,
     },
   });
   console.log(`✓ Usuário:       ${viewerUser.email} (id: ${viewerUser.id})`);

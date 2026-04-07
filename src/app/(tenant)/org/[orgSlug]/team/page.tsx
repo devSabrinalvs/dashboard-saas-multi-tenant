@@ -7,7 +7,10 @@ import { MemberRowActions } from "@/components/team/member-row-actions";
 import { InviteRowActions } from "@/components/team/invite-row-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
 import { RoleBadge } from "@/components/shared/role-badge";
+import { Button } from "@/components/ui/button";
+import { UserPlus } from "lucide-react";
 import type { Role } from "@/generated/prisma/enums";
 
 function formatDate(d: Date) {
@@ -49,6 +52,22 @@ export default async function TeamPage({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          {members.length === 1 && (
+            <div className="px-6 pb-6">
+              <EmptyState
+                icon={UserPlus}
+                title="Você é o único membro"
+                subtitle="Convide colegas para colaborar em projetos e tarefas."
+                action={
+                  canInvite ? (
+                    <Button size="sm" variant="outline" asChild>
+                      <a href="#invite-form">Convidar alguém</a>
+                    </Button>
+                  ) : undefined
+                }
+              />
+            </div>
+          )}
           <div className="divide-y">
             {members.map((m) => (
               <div
@@ -126,7 +145,7 @@ export default async function TeamPage({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card id="invite-form">
             <CardContent className="pt-6">
               <InviteForm orgSlug={orgSlug} />
             </CardContent>
