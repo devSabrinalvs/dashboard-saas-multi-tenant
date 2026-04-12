@@ -25,16 +25,24 @@ const PAGE_SEGMENTS = Object.keys(PAGE_LABELS);
 
 interface TopbarProps {
   userEmail: string;
+  userName?: string | null;
   orgName: string;
 }
 
-function getInitials(email: string): string {
+function getInitials(name: string | null | undefined, email: string): string {
+  if (name) {
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
   if (!email) return "U";
   const local = email.split("@")[0] ?? "U";
   return local.slice(0, 2).toUpperCase();
 }
 
-export function Topbar({ userEmail, orgName }: TopbarProps) {
+export function Topbar({ userEmail, userName, orgName }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const segment =
@@ -71,7 +79,7 @@ export function Topbar({ userEmail, orgName }: TopbarProps) {
             >
               <Avatar className="size-8">
                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {getInitials(userEmail)}
+                  {getInitials(userName, userEmail)}
                 </AvatarFallback>
               </Avatar>
             </button>
@@ -79,6 +87,9 @@ export function Topbar({ userEmail, orgName }: TopbarProps) {
 
           <DropdownMenuContent align="end" className="w-52">
             <div className="px-2 py-1.5">
+              {userName && (
+                <p className="truncate text-sm font-medium">{userName}</p>
+              )}
               <p className="truncate text-xs text-muted-foreground">
                 {userEmail}
               </p>

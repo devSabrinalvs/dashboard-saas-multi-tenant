@@ -2,6 +2,7 @@ import { requireOrgContext } from "@/server/org/require-org-context";
 import { findUserTwoFactorData } from "@/server/repo/two-factor-repo";
 import { getUserDeletionInfo } from "@/server/repo/account-repo";
 import { getReauthMethodType } from "@/server/use-cases/delete-account";
+import { prisma } from "@/lib/prisma";
 import {
   Card,
   CardContent,
@@ -14,8 +15,8 @@ import { TwoFactorPanel } from "@/features/auth/components/two-factor-panel";
 import { SessionsPanel } from "@/features/auth/components/sessions-panel";
 import { TrustedDevicesPanel } from "@/features/auth/components/trusted-devices-panel";
 import { DangerZonePanel } from "@/features/auth/components/danger-zone-panel";
-
-const placeholderSections = ["Perfil", "Conta", "Notificações"] as const;
+import { ProfilePanel } from "@/features/auth/components/profile-panel";
+import { ChangePasswordPanel } from "@/features/auth/components/change-password-panel";
 
 export default async function SettingsPage({
   params,
@@ -25,9 +26,13 @@ export default async function SettingsPage({
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
 
-  const [twoFactorData, deletionInfo] = await Promise.all([
+  const [twoFactorData, deletionInfo, userProfile] = await Promise.all([
     findUserTwoFactorData(ctx.userId),
     getUserDeletionInfo(ctx.userId),
+    prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { name: true, password: true },
+    }),
   ]);
   const twoFactorEnabled = twoFactorData?.twoFactorEnabled ?? false;
   const reauthMethod = getReauthMethodType({
@@ -48,22 +53,34 @@ export default async function SettingsPage({
       <Separator />
 
       <div className="space-y-4">
-        {placeholderSections.map((section) => (
-          <Card key={section}>
-            <CardHeader>
-              <CardTitle className="text-base">{section}</CardTitle>
-              <CardDescription>
-                Configurações de {section.toLowerCase()} serão implementadas em
-                uma etapa futura.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex h-16 items-center justify-center rounded-md border border-dashed">
-                <p className="text-xs text-muted-foreground">Placeholder</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {/* Perfil */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Perfil</CardTitle>
+            <CardDescription>
+              Seu nome de exibição e informações públicas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfilePanel
+              name={userProfile?.name ?? null}
+              email={ctx.email}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Conta — trocar senha */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Senha</CardTitle>
+            <CardDescription>
+              Altere sua senha de acesso. Mínimo de 8 caracteres.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChangePasswordPanel hasPassword={!!userProfile?.password} />
+          </CardContent>
+        </Card>
 
         {/* Segurança — 2FA */}
         <Card>

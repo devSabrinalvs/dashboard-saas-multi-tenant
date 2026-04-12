@@ -7,6 +7,7 @@ import type { BillingBannerType } from "@/billing/billing-state";
 interface AppShellProps {
   children: React.ReactNode;
   userEmail: string;
+  userName?: string | null;
   orgSlug: string;
   orgName: string;
   userOrgs: OrgLink[];
@@ -24,6 +25,7 @@ interface AppShellProps {
 export function AppShell({
   children,
   userEmail,
+  userName,
   orgSlug,
   orgName,
   userOrgs,
@@ -37,7 +39,7 @@ export function AppShell({
       <SidebarNav orgSlug={orgSlug} orgName={orgName} userOrgs={userOrgs} canAudit={canAudit} canBilling={canBilling} canDataExport={canDataExport} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar userEmail={userEmail} orgName={orgName} />
+        <Topbar userEmail={userEmail} userName={userName} orgName={orgName} />
         <main className="flex-1 overflow-auto p-6">
           {billingBanner?.bannerType && (
             <BillingBanner

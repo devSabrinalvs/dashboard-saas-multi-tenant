@@ -1,6 +1,6 @@
 import { requireOrgContext } from "@/server/org/require-org-context";
-import { findOrgsByUserId } from "@/server/repo/organization-repo";
-import { findOrgBySlug } from "@/server/repo/organization-repo";
+import { findOrgsByUserId, findOrgBySlug } from "@/server/repo/organization-repo";
+import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/layout/app-shell";
 import { SessionPing } from "@/components/layout/session-ping";
 import { WelcomeBanner } from "@/features/onboarding/components/welcome-banner";
@@ -16,9 +16,10 @@ export default async function TenantLayout({
 }) {
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
-  const [userOrgs, org] = await Promise.all([
+  const [userOrgs, org, userProfile] = await Promise.all([
     findOrgsByUserId(ctx.userId),
     findOrgBySlug(orgSlug),
+    prisma.user.findUnique({ where: { id: ctx.userId }, select: { name: true } }),
   ]);
 
   const canAudit = can(ctx.role, "audit:read");
@@ -50,6 +51,7 @@ export default async function TenantLayout({
   return (
     <AppShell
       userEmail={ctx.email}
+      userName={userProfile?.name}
       orgSlug={ctx.orgSlug}
       orgName={ctx.orgName}
       userOrgs={userOrgs}
