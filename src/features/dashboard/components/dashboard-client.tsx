@@ -24,6 +24,10 @@ import { ActivityItem } from "./activity-item";
 import { useDashboardSummary } from "@/features/dashboard/hooks/use-dashboard-summary";
 import { useMyOpenTasks } from "@/features/dashboard/hooks/use-my-open-tasks";
 import { useRecentActivity } from "@/features/dashboard/hooks/use-recent-activity";
+import { useAnalytics } from "@/features/dashboard/hooks/use-analytics";
+import { TasksByWeekChart } from "./charts/tasks-by-week-chart";
+import { TasksByMemberChart } from "./charts/tasks-by-member-chart";
+import { TasksByPriorityChart } from "./charts/tasks-by-priority-chart";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -103,6 +107,12 @@ export function DashboardClient({
     error: activityErr,
     refetch: refetchActivity,
   } = useRecentActivity(orgSlug, canAudit);
+
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    isError: analyticsError,
+  } = useAnalytics(orgSlug);
 
   const openTasks = openTasksData?.items.slice(0, 5) ?? [];
   const activityLogs = activityData?.items.slice(0, 5) ?? [];
@@ -278,6 +288,75 @@ export function DashboardClient({
           </Card>
         )}
       </div>
+
+      {/* ── Analytics charts ────────────────────────────────────────────────── */}
+      <Separator />
+      <DashboardSection title="Análise">
+        {analyticsLoading && (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-[220px] w-full rounded-md" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {analyticsError && (
+          <ErrorState description="Erro ao carregar dados de análise." />
+        )}
+
+        {!analyticsLoading && !analyticsError && analyticsData && (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Tasks por semana */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Tarefas por semana
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <TasksByWeekChart data={analyticsData.tasksByWeek} />
+              </CardContent>
+            </Card>
+
+            {/* Tasks por membro */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Top membros
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {analyticsData.tasksByMember.length === 0 ? (
+                  <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+                    Nenhum dado disponível.
+                  </div>
+                ) : (
+                  <TasksByMemberChart data={analyticsData.tasksByMember} />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tasks por prioridade */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Por prioridade
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <TasksByPriorityChart data={analyticsData.tasksByPriority} />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </DashboardSection>
 
       {/* ── Quick Actions ───────────────────────────────────────────────────── */}
       {hasQuickActions && (
