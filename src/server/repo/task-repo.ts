@@ -99,6 +99,8 @@ export async function listTasksByProject(
   const where = {
     orgId,
     projectId,
+    // Nunca retorna sub-tarefas na lista principal
+    parentTaskId: null,
     ...(status ? { status } : {}),
     ...(priority ? { priority } : {}),
     ...(tag ? { tags: { hasSome: [tag] } } : {}),

@@ -27,6 +27,7 @@ import { useUpdateTask } from "@/features/tasks/hooks/use-update-task";
 import { useOrgMembers } from "@/features/tasks/hooks/use-org-members";
 import { AssigneeSelector } from "./assignee-selector";
 import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
+import { SubTasksPanel } from "./sub-tasks-panel";
 import type { Task } from "@/server/repo/task-repo";
 
 /** Converte Date | string | null | undefined → "YYYY-MM-DD" para input[type=date] */
@@ -51,6 +52,9 @@ interface TaskFormModalProps {
   projectId: string;
   /** Se fornecido, modo edição. */
   task?: Task;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 export function TaskFormModal({
@@ -59,6 +63,9 @@ export function TaskFormModal({
   orgSlug,
   projectId,
   task,
+  canCreate = true,
+  canUpdate = true,
+  canDelete = true,
 }: TaskFormModalProps) {
   const isEditing = !!task;
   const createMutation = useCreateTask(orgSlug, projectId);
@@ -269,6 +276,20 @@ export function TaskFormModal({
               </div>
             )}
           </div>
+
+          {/* Sub-tarefas — apenas no modo edição */}
+          {isEditing && task && (
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Sub-tarefas</p>
+              <SubTasksPanel
+                orgSlug={orgSlug}
+                taskId={task.id}
+                canCreate={canCreate}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+              />
+            </div>
+          )}
 
           {(createMutation.error ?? updateMutation.error) && (
             <p className="text-sm text-destructive">

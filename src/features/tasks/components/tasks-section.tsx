@@ -652,6 +652,9 @@ export function TasksSection({
         orgSlug={orgSlug}
         projectId={projectId}
         task={editingTask}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
       />
     </section>
   );

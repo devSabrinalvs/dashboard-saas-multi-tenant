@@ -269,6 +269,8 @@ model Task {
   tags        String[]
   /// Responsável pela tarefa. Null = sem responsável. Deve ser membro da org.
   assigneeUserId String?
+  /// Task pai. Null = tarefa raiz. Non-null = sub-tarefa.
+  parentTaskId String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -276,9 +278,14 @@ model Task {
   project      Project      @relation(fields: [projectId], references: [id], onDelete: Restrict)
   /// Usuário responsável. Null quando o responsável é removido da org ou do sistema.
   assignee     User?        @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  /// Task pai (sub-tarefa). Null quando a task pai é deletada (SetNull).
+  parent       Task?        @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  /// Sub-tarefas desta task.
+  subTasks     Task[]       @relation("SubTasks")
 
   @@index([orgId, projectId, status])
   @@index([orgId, assigneeUserId])
+  @@index([parentTaskId])
 }
 
 /// Token de verificação de email (gerado no signup / reenvio).
