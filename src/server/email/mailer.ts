@@ -46,6 +46,15 @@ export interface IMailer {
     orgName: string;
     billingUrl: string;
   }): Promise<void>;
+  /** Digest semanal: tarefas abertas + concluídas na semana. */
+  sendWeeklyDigestEmail(params: {
+    to: string;
+    name: string;
+    orgName: string;
+    orgUrl: string;
+    openTasks: { title: string; projectName: string }[];
+    completedThisWeek: { title: string; projectName: string }[];
+  }): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +110,16 @@ const consoleMailer: IMailer = {
     console.log(`    Para: ${to}`);
     console.log(`    Org: ${orgName}`);
     console.log(`    Billing URL: ${billingUrl}`);
+    console.log("──────────────────────────────────────────────────────────\n");
+  },
+  async sendWeeklyDigestEmail({ to, name, orgName, orgUrl, openTasks, completedThisWeek }) {
+    console.log("\n──────────────────────────────────────────────────────────");
+    console.log("📋  [ConsoleMailer] Digest semanal (dev fallback)");
+    console.log(`    Para: ${to} (${name})`);
+    console.log(`    Org: ${orgName}`);
+    console.log(`    Tarefas abertas: ${openTasks.length}`);
+    console.log(`    Concluídas esta semana: ${completedThisWeek.length}`);
+    console.log(`    URL: ${orgUrl}`);
     console.log("──────────────────────────────────────────────────────────\n");
   },
 };
@@ -380,6 +399,71 @@ function buildDowngradedEmailHtml(params: {
 </body></html>`;
 }
 
+function buildWeeklyDigestHtml(params: {
+  name: string;
+  orgName: string;
+  orgUrl: string;
+  openTasks: { title: string; projectName: string }[];
+  completedThisWeek: { title: string; projectName: string }[];
+}): string {
+  const { name, orgName, orgUrl, openTasks, completedThisWeek } = params;
+  const firstName = name.split(" ")[0] ?? name;
+
+  const taskRow = (t: { title: string; projectName: string }) =>
+    `<tr>
+      <td style="padding:6px 0;font-size:14px;color:#09090b;border-bottom:1px solid #f4f4f5;">
+        ${t.title}
+        <span style="font-size:12px;color:#a1a1aa;margin-left:6px;">${t.projectName}</span>
+      </td>
+    </tr>`;
+
+  const openSection = openTasks.length
+    ? `<h3 style="margin:0 0 8px;font-size:14px;font-weight:600;color:#09090b;">Tarefas abertas (${openTasks.length})</h3>
+       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+         ${openTasks.map(taskRow).join("")}
+       </table>`
+    : `<p style="font-size:14px;color:#71717a;margin:0 0 24px;">Nenhuma tarefa aberta atribuída a você.</p>`;
+
+  const doneSection = completedThisWeek.length
+    ? `<h3 style="margin:0 0 8px;font-size:14px;font-weight:600;color:#16a34a;">Concluídas esta semana (${completedThisWeek.length})</h3>
+       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+         ${completedThisWeek.map(taskRow).join("")}
+       </table>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8" /><title>Seu digest semanal — ${orgName}</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;padding:40px;max-width:560px;width:100%;">
+        <tr><td style="padding-bottom:24px;border-bottom:1px solid #e4e4e7;">
+          <p style="margin:0;font-size:20px;font-weight:700;color:#09090b;">Projorg</p>
+          <p style="margin:4px 0 0;font-size:13px;color:#71717a;">${orgName}</p>
+        </td></tr>
+        <tr><td style="padding:28px 0 16px;">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#09090b;">Olá, ${firstName}!</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#71717a;line-height:1.6;">
+            Aqui está seu resumo semanal de tarefas em <strong>${orgName}</strong>.
+          </p>
+          ${openSection}
+          ${doneSection}
+          <a href="${orgUrl}" style="display:inline-block;background:#09090b;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">
+            Ver todas as tarefas
+          </a>
+        </td></tr>
+        <tr><td style="padding-top:24px;border-top:1px solid #e4e4e7;">
+          <p style="margin:0;font-size:12px;color:#a1a1aa;">
+            Você está recebendo este email porque é membro de <strong>${orgName}</strong> no Projorg.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
 function makeResendMailer(apiKey: string, from: string): IMailer {
   return {
     async sendVerificationEmail({ to, verificationUrl }) {
@@ -462,6 +546,17 @@ function makeResendMailer(apiKey: string, from: string): IMailer {
         html: buildDowngradedEmailHtml({ orgName, billingUrl }),
       });
       if (error) console.error("[ResendMailer] Falha ao enviar email downgraded:", error);
+    },
+    async sendWeeklyDigestEmail({ to, name, orgName, orgUrl, openTasks, completedThisWeek }) {
+      const { Resend } = await import("resend");
+      const resend = new Resend(apiKey);
+      const { error } = await resend.emails.send({
+        from,
+        to,
+        subject: `Seu digest semanal — ${orgName}`,
+        html: buildWeeklyDigestHtml({ name, orgName, orgUrl, openTasks, completedThisWeek }),
+      });
+      if (error) console.error("[ResendMailer] Falha ao enviar digest semanal:", error);
     },
   };
 }

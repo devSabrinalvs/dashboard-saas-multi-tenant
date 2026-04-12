@@ -139,6 +139,15 @@ export async function countTasksByProject(
   return prisma.task.count({ where: { orgId, projectId } });
 }
 
+/** Calcula nextOccurrenceAt com base em uma data de referência e recorrência. */
+export function computeNextOccurrence(from: Date, recurrence: string): Date {
+  const d = new Date(from);
+  if (recurrence === "DAILY")   d.setDate(d.getDate() + 1);
+  if (recurrence === "WEEKLY")  d.setDate(d.getDate() + 7);
+  if (recurrence === "MONTHLY") d.setMonth(d.getMonth() + 1);
+  return d;
+}
+
 /**
  * Cria uma task no projeto.
  */
@@ -152,8 +161,16 @@ export async function createTask(data: {
   dueDate?: Date | null;
   tags?: string[];
   assigneeUserId?: string | null;
+  recurrence?: string | null;
+  recurringParentId?: string | null;
 }): Promise<Task> {
-  return prisma.task.create({ data });
+  const nextOccurrenceAt =
+    data.recurrence
+      ? computeNextOccurrence(data.dueDate ?? new Date(), data.recurrence)
+      : null;
+  return prisma.task.create({
+    data: { ...data, nextOccurrenceAt },
+  });
 }
 
 /**
@@ -185,6 +202,8 @@ export async function updateTask(
     dueDate?: Date | null;
     tags?: string[];
     assigneeUserId?: string | null;
+    recurrence?: string | null;
+    nextOccurrenceAt?: Date | null;
   }
 ): Promise<Task | null> {
   const { count } = await prisma.task.updateMany({

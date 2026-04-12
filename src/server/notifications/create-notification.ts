@@ -4,7 +4,7 @@
  */
 import { prisma } from "@/lib/prisma";
 
-export type NotificationType = "task.assigned" | "task.commented";
+export type NotificationType = "task.assigned" | "task.commented" | "task.mentioned";
 
 export interface CreateNotificationInput {
   userId: string;

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { apiClient } from "@/shared/api/client";
 import { cn } from "@/lib/utils";
+import { CommentContent } from "./comment-content";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -214,9 +215,9 @@ export function TaskCommentsPanel({
                 ) : (
                   <div className="relative">
                     <p className={cn(
-                      "text-sm text-foreground whitespace-pre-wrap break-words rounded-lg bg-muted/50 px-3 py-2",
+                      "text-sm text-foreground rounded-lg bg-muted/50 px-3 py-2",
                     )}>
-                      {comment.content}
+                      <CommentContent content={comment.content} />
                     </p>
                     {/* Actions */}
                     {(canEdit || canDelete) && (

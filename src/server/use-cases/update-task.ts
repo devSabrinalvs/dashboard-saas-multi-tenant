@@ -1,5 +1,5 @@
 import type { OrgContext } from "@/server/org/require-org-context";
-import { findTaskById, updateTask as repoUpdateTask, type Task } from "@/server/repo/task-repo";
+import { findTaskById, updateTask as repoUpdateTask, computeNextOccurrence, type Task } from "@/server/repo/task-repo";
 import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { TaskNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
 import { logAudit } from "@/server/audit/log-audit";
@@ -15,6 +15,7 @@ export type UpdateTaskData = {
   dueDate?: Date | null;
   tags?: string[];
   assigneeUserId?: string | null;
+  recurrence?: string | null;
 };
 
 /**
@@ -39,8 +40,18 @@ export async function updateTask(
     if (!membership) throw new AssigneeNotInOrgError();
   }
 
+  // Recalcula nextOccurrenceAt se recurrence ou dueDate mudar
+  let nextOccurrenceAt: Date | null | undefined = undefined;
+  const newRecurrence = data.recurrence !== undefined ? data.recurrence : existing.recurrence;
+  const newDueDate = data.dueDate !== undefined ? data.dueDate : existing.dueDate;
+  if (data.recurrence !== undefined || data.dueDate !== undefined) {
+    nextOccurrenceAt = newRecurrence
+      ? computeNextOccurrence(newDueDate ?? new Date(), newRecurrence)
+      : null;
+  }
+
   // Repo também filtra por orgId (defense-in-depth duplo)
-  const task = await repoUpdateTask(taskId, ctx.orgId, data);
+  const task = await repoUpdateTask(taskId, ctx.orgId, { ...data, nextOccurrenceAt });
   if (!task) throw new TaskNotFoundError();
 
   void logAudit({

@@ -28,6 +28,8 @@ import { useOrgMembers } from "@/features/tasks/hooks/use-org-members";
 import { AssigneeSelector } from "./assignee-selector";
 import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
 import { SubTasksPanel } from "./sub-tasks-panel";
+import { TaskDependenciesPanel } from "./task-dependencies-panel";
+import { TaskCustomValuesPanel } from "./task-custom-values-panel";
 import { TaskCommentsPanel } from "./task-comments-panel";
 import { TaskActivityPanel } from "./task-activity-panel";
 import { TimeTrackingPanel } from "./time-tracking-panel";
@@ -46,6 +48,12 @@ const STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "Em andamento",
   DONE: "Concluído",
   CANCELED: "Cancelado",
+};
+
+const RECURRENCE_LABELS: Record<string, string> = {
+  DAILY: "Diariamente",
+  WEEKLY: "Semanalmente",
+  MONTHLY: "Mensalmente",
 };
 
 interface TaskFormModalProps {
@@ -99,6 +107,7 @@ export function TaskFormModal({
       dueDate: task?.dueDate ? new Date(task.dueDate).toISOString() : null,
       tags: task?.tags ?? [],
       assigneeUserId: task?.assigneeUserId ?? null,
+      recurrence: (task?.recurrence as TaskCreateInput["recurrence"]) ?? null,
     },
   });
 
@@ -106,6 +115,7 @@ export function TaskFormModal({
   const currentPriority = watch("priority");
   const currentTags = watch("tags");
   const currentAssignee = watch("assigneeUserId");
+  const currentRecurrence = watch("recurrence");
 
   useEffect(() => {
     if (open) {
@@ -117,6 +127,7 @@ export function TaskFormModal({
         dueDate: task?.dueDate ? new Date(task.dueDate).toISOString() : null,
         tags: task?.tags ?? [],
         assigneeUserId: task?.assigneeUserId ?? null,
+        recurrence: (task?.recurrence as TaskCreateInput["recurrence"]) ?? null,
       });
       setTagsInput(task?.tags?.join(", ") ?? "");
     }
@@ -230,6 +241,26 @@ export function TaskFormModal({
           </div>
 
           <div className="space-y-1">
+            <Label htmlFor="task-recurrence">Recorrência</Label>
+            <Select
+              value={currentRecurrence ?? "none"}
+              onValueChange={(v) =>
+                setValue("recurrence", v === "none" ? null : (v as TaskCreateInput["recurrence"]))
+              }
+            >
+              <SelectTrigger id="task-recurrence">
+                <SelectValue placeholder="Sem recorrência" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem recorrência</SelectItem>
+                {Object.entries(RECURRENCE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
             <Label htmlFor="task-assignee">Responsável</Label>
             <AssigneeSelector
               members={members ?? []}
@@ -283,6 +314,30 @@ export function TaskFormModal({
               </div>
             )}
           </div>
+
+          {/* Campos customizados — apenas no modo edição */}
+          {isEditing && task && (
+            <div className="border-t pt-4 space-y-1">
+              <p className="text-sm font-medium">Campos extras</p>
+              <TaskCustomValuesPanel
+                orgSlug={orgSlug}
+                taskId={task.id}
+                canUpdate={canUpdate}
+              />
+            </div>
+          )}
+
+          {/* Dependências — apenas no modo edição */}
+          {isEditing && task && (
+            <div className="border-t pt-4 space-y-1">
+              <p className="text-sm font-medium">Dependências</p>
+              <TaskDependenciesPanel
+                orgSlug={orgSlug}
+                taskId={task.id}
+                canUpdate={canUpdate}
+              />
+            </div>
+          )}
 
           {/* Sub-tarefas — apenas no modo edição */}
           {isEditing && task && (

@@ -7,6 +7,7 @@ import { requireOrgContext } from "@/server/org/require-org-context";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createNotification } from "@/server/notifications/create-notification";
+import { parseMentions } from "@/server/comments/parse-mentions";
 
 const createSchema = z.object({
   content: z.string().min(1, "Comentário não pode ser vazio").max(2000),
@@ -78,6 +79,25 @@ export async function POST(
       link: `/org/${orgSlug}/projects/${task.projectId}`,
     });
   }
+
+  // Notificar membros @mencionados no comentário
+  void (async () => {
+    try {
+      const mentionedIds = await parseMentions(parsed.data.content, ctx.orgId, ctx.userId);
+      for (const userId of mentionedIds) {
+        if (userId === task.assigneeUserId) continue; // já notificado acima
+        void createNotification({
+          userId,
+          orgId: ctx.orgId,
+          type: "task.mentioned",
+          message: `Você foi mencionado em um comentário na tarefa "${task.title}".`,
+          link: `/org/${orgSlug}/projects/${task.projectId}`,
+        });
+      }
+    } catch {
+      // best-effort
+    }
+  })();
 
   return NextResponse.json({ comment }, { status: 201 });
 }

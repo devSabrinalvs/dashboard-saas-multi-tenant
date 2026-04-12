@@ -18,6 +18,7 @@ export const taskCreateSchema = z.object({
     .max(10, "Máximo 10 tags")
     .default([]),
   assigneeUserId: z.string().nullable().optional(),
+  recurrence: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).nullable().optional(),
 });
 
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
@@ -36,6 +37,7 @@ export const taskUpdateSchema = z
     dueDate: z.string().datetime({ offset: true }).nullable().optional(),
     tags: z.array(z.string().max(24)).max(10).optional(),
     assigneeUserId: z.string().nullable().optional(),
+    recurrence: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).nullable().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: "Nenhum campo para atualizar",

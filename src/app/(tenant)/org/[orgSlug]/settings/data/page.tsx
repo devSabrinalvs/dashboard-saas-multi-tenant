@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireOrgContext } from "@/server/org/require-org-context";
 import { can } from "@/security/rbac";
 import { DataExportImport } from "@/features/data/components/data-export-import";
+import { CsvExportButton } from "@/features/data/components/csv-export-button";
 
 interface PageProps {
   params: Promise<{ orgSlug: string }>;
@@ -32,6 +33,16 @@ export default async function DataSettingsPage({ params }: PageProps) {
         canExport={canExport}
         canImport={canImport}
       />
+
+      {canExport && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">Exportar tarefas como CSV</h3>
+          <p className="text-xs text-muted-foreground">
+            Baixe todas as tarefas da organização em planilha. Abrível no Excel, Google Sheets, etc.
+          </p>
+          <CsvExportButton orgSlug={orgSlug} />
+        </div>
+      )}
 
       <div className="rounded-md border border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/30 p-4 text-sm">
         <p className="font-medium text-yellow-800 dark:text-yellow-200">Observação importante</p>

@@ -17,6 +17,7 @@ export type CreateTaskData = {
   dueDate?: Date | null;
   tags?: string[];
   assigneeUserId?: string | null;
+  recurrence?: string | null;
 };
 
 /**
@@ -62,6 +63,7 @@ export async function createTask(
     dueDate: data.dueDate,
     tags: data.tags,
     assigneeUserId: data.assigneeUserId,
+    recurrence: data.recurrence,
   });
 
   void logAudit({

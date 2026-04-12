@@ -206,6 +206,8 @@ model Organization {
   milestones     Milestone[]
   webhooks       OrgWebhook[]
   templates      ProjectTemplate[]
+  apiKeys        ApiKey[]
+  customFieldDefs CustomFieldDef[]
 }
 
 /// Vínculo entre User e Organization com papel (role).
@@ -291,6 +293,12 @@ model Task {
   parentTaskId String?
   /// Milestone / Sprint ao qual esta tarefa pertence.
   milestoneId  String?
+  /// Recorrência: null = não recorrente.
+  recurrence   String?
+  /// Próxima ocorrência programada (usado pelo cron).
+  nextOccurrenceAt DateTime?
+  /// ID da task-modelo original para instâncias recorrentes.
+  recurringParentId String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -310,6 +318,12 @@ model Task {
   timeEntries  TimeEntry[]
   /// Milestone ao qual esta task pertence.
   milestone    Milestone?   @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  /// Tarefas que esta task bloqueia (ela é pré-requisito).
+  blocks       TaskDependency[] @relation("BlockingTask")
+  /// Tarefas que bloqueiam esta task (pré-requisitos).
+  blockedBy    TaskDependency[] @relation("BlockedTask")
+  /// Valores de campos customizados.
+  customValues CustomFieldValue[]
 
   @@index([orgId, projectId, status])
   @@index([orgId, assigneeUserId])
@@ -608,6 +622,82 @@ model ProjectTemplate {
 
   organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
+  @@index([orgId])
+}
+
+/// Dependência entre tarefas: blockingTaskId é pré-requisito de blockedTaskId.
+model TaskDependency {
+  id            String   @id @default(cuid())
+  orgId         String
+  /// Task que bloqueia (pré-requisito).
+  blockingTaskId String
+  /// Task bloqueada (depende da outra).
+  blockedTaskId  String
+  createdAt     DateTime @default(now())
+
+  blockingTask Task @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockedTask  Task @relation("BlockedTask",  fields: [blockedTaskId],  references: [id], onDelete: Cascade)
+
+  @@unique([blockingTaskId, blockedTaskId])
+  @@index([orgId])
+  @@index([blockedTaskId])
+}
+
+/// Chave de API por organização para integrações externas.
+model ApiKey {
+  id          String    @id @default(cuid())
+  orgId       String
+  name        String
+  /// SHA-256 do token raw — nunca armazenar o token em texto claro.
+  keyHash     String    @unique
+  /// Prefixo legível (primeiros 8 chars do token raw).
+  prefix      String
+  createdById String
+  active      Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+/// Definição de campo customizado por organização.
+model CustomFieldDef {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  /// TEXT | NUMBER | DATE | SELECT
+  type      String
+  /// Opções disponíveis para type=SELECT.
+  options   String[]
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  values       CustomFieldValue[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+}
+
+/// Valor de um campo customizado para uma task específica.
+model CustomFieldValue {
+  id         String   @id @default(cuid())
+  fieldDefId String
+  taskId     String
+  orgId      String
+  value      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  fieldDef CustomFieldDef @relation(fields: [fieldDefId], references: [id], onDelete: Cascade)
+  task     Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldDefId, taskId])
+  @@index([taskId])
   @@index([orgId])
 }
 
