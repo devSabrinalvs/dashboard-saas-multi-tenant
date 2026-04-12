@@ -7,6 +7,7 @@ import { getPlanLimits, PlanLimitReachedError } from "@/billing/plan-limits";
 import { findMembership } from "@/server/repo/membership-repo";
 import { AssigneeNotInOrgError } from "@/server/errors/project-errors";
 import { createNotification } from "@/server/notifications/create-notification";
+import { logTaskActivity } from "@/server/tasks/log-task-activity";
 
 export type CreateTaskData = {
   title: string;
@@ -68,6 +69,14 @@ export async function createTask(
     actorUserId: ctx.userId,
     action: "task.created",
     metadata: { taskId: task.id, projectId, title: task.title },
+  });
+
+  void logTaskActivity({
+    taskId: task.id,
+    orgId: ctx.orgId,
+    userId: ctx.userId,
+    action: "task.created",
+    metadata: { title: task.title },
   });
 
   // Notificar o responsável se for diferente do criador

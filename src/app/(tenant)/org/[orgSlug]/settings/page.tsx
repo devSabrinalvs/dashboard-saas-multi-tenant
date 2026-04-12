@@ -17,6 +17,9 @@ import { TrustedDevicesPanel } from "@/features/auth/components/trusted-devices-
 import { DangerZonePanel } from "@/features/auth/components/danger-zone-panel";
 import { ProfilePanel } from "@/features/auth/components/profile-panel";
 import { ChangePasswordPanel } from "@/features/auth/components/change-password-panel";
+import { OrgTagsPanel } from "@/features/tags/components/org-tags-panel";
+import { WebhooksPanel } from "@/features/webhooks/components/webhooks-panel";
+import { can } from "@/security/rbac";
 
 export default async function SettingsPage({
   params,
@@ -35,6 +38,8 @@ export default async function SettingsPage({
     }),
   ]);
   const twoFactorEnabled = twoFactorData?.twoFactorEnabled ?? false;
+  const canManageTags = can(ctx.role, "task:update");
+  const canManageWebhooks = can(ctx.role, "member:invite");
   const reauthMethod = getReauthMethodType({
     password: deletionInfo?.hasPassword ? "exists" : null,
     twoFactorEnabled: twoFactorEnabled,
@@ -120,6 +125,34 @@ export default async function SettingsPage({
             <TrustedDevicesPanel />
           </CardContent>
         </Card>
+
+        {/* Tags da Organização */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tags</CardTitle>
+            <CardDescription>
+              Gerencie as tags disponíveis para categorizar tarefas nesta organização.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <OrgTagsPanel orgSlug={orgSlug} canManage={canManageTags} />
+          </CardContent>
+        </Card>
+
+        {/* Webhooks */}
+        {canManageWebhooks && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Webhooks</CardTitle>
+              <CardDescription>
+                Receba eventos da organização em sistemas externos via HTTP POST.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WebhooksPanel orgSlug={orgSlug} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Zona de Risco */}
         <Card className="border-destructive/30">

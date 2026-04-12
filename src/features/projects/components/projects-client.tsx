@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Folder } from "lucide-react";
+import { Plus, Pencil, Trash2, Folder, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { ProjectFormModal } from "./project-form-modal";
+import { ProjectTemplatePicker } from "@/features/templates/components/project-template-picker";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useDeleteProject } from "@/features/projects/hooks/use-delete-project";
 import type { Project } from "@/server/repo/project-repo";
@@ -34,6 +35,7 @@ export function ProjectsClient({
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>();
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
 
   const { data, isLoading, error, refetch } = useProjects(orgSlug, {
     search: search || undefined,
@@ -84,10 +86,16 @@ export function ProjectsClient({
           className="max-w-sm"
         />
         {canCreate && (
-          <Button size="sm" onClick={handleNew} data-testid="new-project-btn">
-            <Plus className="size-4" />
-            Novo Projeto
-          </Button>
+          <>
+            <Button size="sm" variant="outline" onClick={() => setTemplatePickerOpen(true)}>
+              <LayoutTemplate className="size-4" />
+              De template
+            </Button>
+            <Button size="sm" onClick={handleNew} data-testid="new-project-btn">
+              <Plus className="size-4" />
+              Novo Projeto
+            </Button>
+          </>
         )}
       </div>
 
@@ -242,6 +250,12 @@ export function ProjectsClient({
         onOpenChange={handleModalClose}
         orgSlug={orgSlug}
         project={editingProject}
+      />
+
+      <ProjectTemplatePicker
+        orgSlug={orgSlug}
+        open={templatePickerOpen}
+        onOpenChange={setTemplatePickerOpen}
       />
     </div>
   );

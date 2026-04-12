@@ -29,6 +29,8 @@ import { AssigneeSelector } from "./assignee-selector";
 import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
 import { SubTasksPanel } from "./sub-tasks-panel";
 import { TaskCommentsPanel } from "./task-comments-panel";
+import { TaskActivityPanel } from "./task-activity-panel";
+import { TimeTrackingPanel } from "./time-tracking-panel";
 import type { Task } from "@/server/repo/task-repo";
 
 /** Converte Date | string | null | undefined → "YYYY-MM-DD" para input[type=date] */
@@ -305,6 +307,28 @@ export function TaskFormModal({
                 currentUserId={currentUserId}
                 canAdminDelete={canAdminDelete}
               />
+            </div>
+          )}
+
+          {/* Time Tracking — apenas no modo edição */}
+          {isEditing && task && currentUserId && (
+            <div className="border-t pt-4">
+              <TimeTrackingPanel
+                orgSlug={orgSlug}
+                taskId={task.id}
+                currentUserId={currentUserId}
+                canUpdate={canUpdate}
+              />
+            </div>
+          )}
+
+          {/* Histórico de atividade — apenas no modo edição */}
+          {isEditing && task && (
+            <div className="border-t pt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Histórico
+              </p>
+              <TaskActivityPanel orgSlug={orgSlug} taskId={task.id} />
             </div>
           )}
 

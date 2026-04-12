@@ -5,6 +5,7 @@ import { TaskNotFoundError, AssigneeNotInOrgError } from "@/server/errors/projec
 import { logAudit } from "@/server/audit/log-audit";
 import { findMembership } from "@/server/repo/membership-repo";
 import { createNotification } from "@/server/notifications/create-notification";
+import { logTaskActivity, diffTaskChanges } from "@/server/tasks/log-task-activity";
 
 export type UpdateTaskData = {
   title?: string;
@@ -48,6 +49,17 @@ export async function updateTask(
     action: "task.updated",
     metadata: { taskId, changes: data },
   });
+
+  const changes = diffTaskChanges(existing, data);
+  for (const change of changes) {
+    void logTaskActivity({
+      taskId,
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      action: change.action,
+      metadata: change.metadata,
+    });
+  }
 
   // Notificar novo responsável se mudou e é diferente do editor
   if (

@@ -56,6 +56,11 @@ enum SubscriptionStatus {
   TRIALING
 }
 
+enum MilestoneStatus {
+  OPEN
+  CLOSED
+}
+
 // ─── Auth.js required models ──────────────────────────────────────────────────
 
 model User {
@@ -115,6 +120,10 @@ model User {
   taskComments            TaskComment[]             @relation("TaskComments")
   /// Notificações recebidas pelo usuário.
   notifications           Notification[]            @relation("UserNotifications")
+  /// Histórico de atividade em tasks (ator).
+  taskActivities          TaskActivity[]            @relation("TaskActivityActor")
+  /// Registros de tempo.
+  timeEntries             TimeEntry[]               @relation("UserTimeEntries")
 }
 
 model Account {
@@ -189,10 +198,14 @@ model Organization {
 
   memberships    Membership[]
   billingEmails  BillingEmailSent[]
-  invites     Invite[]
-  auditLogs   AuditLog[]
-  projects    Project[]
-  tasks       Task[]
+  invites        Invite[]
+  auditLogs      AuditLog[]
+  projects       Project[]
+  tasks          Task[]
+  tags           OrgTag[]
+  milestones     Milestone[]
+  webhooks       OrgWebhook[]
+  templates      ProjectTemplate[]
 }
 
 /// Vínculo entre User e Organization com papel (role).
@@ -254,6 +267,7 @@ model Project {
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Restrict)
   tasks        Task[]
+  milestones   Milestone[]
 
   @@index([orgId])
 }
@@ -275,6 +289,8 @@ model Task {
   assigneeUserId String?
   /// Task pai. Null = tarefa raiz. Non-null = sub-tarefa.
   parentTaskId String?
+  /// Milestone / Sprint ao qual esta tarefa pertence.
+  milestoneId  String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -288,10 +304,17 @@ model Task {
   subTasks     Task[]       @relation("SubTasks")
   /// Comentários desta task.
   comments     TaskComment[]
+  /// Histórico de atividade desta task.
+  activities   TaskActivity[]
+  /// Registros de tempo desta task.
+  timeEntries  TimeEntry[]
+  /// Milestone ao qual esta task pertence.
+  milestone    Milestone?   @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
 
   @@index([orgId, projectId, status])
   @@index([orgId, assigneeUserId])
   @@index([parentTaskId])
+  @@index([milestoneId])
 }
 
 /// Comentário em uma tarefa. Append-friendly — edição só pelo autor.
@@ -453,6 +476,139 @@ model StripeWebhookEvent {
   id            String   @id @default(cuid())
   stripeEventId String   @unique
   processedAt   DateTime @default(now())
+}
+
+/// Histórico de atividade de uma tarefa (status, prioridade, assignee, título, etc.).
+/// Append-only — nunca deletar registros.
+model TaskActivity {
+  id        String   @id @default(cuid())
+  taskId    String
+  orgId     String
+  /// Null quando o usuário ator foi deletado.
+  userId    String?
+  /// Ex: "status.changed", "priority.changed", "assignee.changed", "title.changed", "created"
+  action    String
+  /// Dados da mudança (ex: { from: "TODO", to: "IN_PROGRESS" })
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  task Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User? @relation("TaskActivityActor", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([taskId])
+  @@index([orgId])
+}
+
+/// Tag com cor definida por organização.
+/// Tasks referenciam tags pelo nome (String[]); OrgTag define a paleta visual.
+model OrgTag {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  /// Cor hex (ex: "#6366f1"). Padrão: índigo.
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, name])
+  @@index([orgId])
+}
+
+/// Milestone (sprint) dentro de um projeto.
+model Milestone {
+  id          String          @id @default(cuid())
+  orgId       String
+  projectId   String
+  name        String
+  description String?
+  startDate   DateTime?
+  dueDate     DateTime?
+  status      MilestoneStatus @default(OPEN)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  tasks        Task[]
+
+  @@index([orgId, projectId])
+}
+
+/// Registro de tempo trabalhado em uma tarefa.
+model TimeEntry {
+  id              String    @id @default(cuid())
+  taskId          String
+  orgId           String
+  userId          String
+  startedAt       DateTime
+  stoppedAt       DateTime?
+  /// Duração calculada em minutos. Null enquanto o timer está rodando.
+  durationMinutes Int?
+  note            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation("UserTimeEntries", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([orgId, userId])
+}
+
+/// Webhook configurado por organização para receber eventos.
+model OrgWebhook {
+  id        String   @id @default(cuid())
+  orgId     String
+  /// URL de destino do webhook.
+  url       String
+  /// Lista de eventos assinados (ex: ["task.created", "task.status_changed"]).
+  events    String[]
+  /// Secret HMAC-SHA256 para assinatura do payload.
+  secret    String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  deliveries   WebhookDelivery[]
+
+  @@index([orgId])
+}
+
+/// Registro de entrega de webhook (para debug e reenvio).
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     Json
+  statusCode  Int?
+  error       String?
+  deliveredAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  webhook OrgWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+}
+
+/// Template de projeto com tarefas pré-definidas.
+/// orgId null = template de sistema (disponível para todas as orgs).
+model ProjectTemplate {
+  id          String   @id @default(cuid())
+  orgId       String?
+  name        String
+  description String?
+  /// Array JSON de tasks: [{ title, status, priority, tags }]
+  tasksJson   Json     @default("[]")
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
 }
 
 /// Log de auditoria do Admin Console interno.
