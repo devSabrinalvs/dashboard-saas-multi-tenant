@@ -1,6 +1,6 @@
 import type { OrgContext } from "@/server/org/require-org-context";
 import { findTaskById, updateTask as repoUpdateTask, type Task } from "@/server/repo/task-repo";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { TaskNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
 import { logAudit } from "@/server/audit/log-audit";
 import { findMembership } from "@/server/repo/membership-repo";
@@ -9,6 +9,7 @@ export type UpdateTaskData = {
   title?: string;
   description?: string | null;
   status?: TaskStatus;
+  priority?: Priority;
   tags?: string[];
   assigneeUserId?: string | null;
 };

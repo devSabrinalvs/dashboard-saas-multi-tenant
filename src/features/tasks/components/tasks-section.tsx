@@ -22,6 +22,7 @@ import { InlineTitle, InlineStatus, InlineTags } from "./task-inline-editor";
 import { SavedFiltersMenu } from "./saved-filters-menu";
 import { KanbanBoard } from "./kanban/kanban-board";
 import { AssigneeAvatar, NoAssigneeAvatar } from "./assignee-avatar";
+import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
 import { useOrgMembers } from "@/features/tasks/hooks/use-org-members";
 import { useTaskSelection } from "@/features/tasks/hooks/use-task-selection";
@@ -111,6 +112,7 @@ export function TasksSection({
   // ── Filter state ──────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [priority, setPriority] = useState("");
   const [tag, setTag] = useState("");
   const [assignedToMe, setAssignedToMe] = useState(false);
   const [page, setPage] = useState(1);
@@ -147,6 +149,7 @@ export function TasksSection({
   const { data, isLoading, error, refetch } = useTasks(orgSlug, projectId, {
     search: debouncedSearch || undefined,
     status: status || undefined,
+    priority: priority || undefined,
     tag: tag || undefined,
     assignedTo: assignedToMe ? "me" : undefined,
     page,
@@ -181,6 +184,12 @@ export function TasksSection({
     clearAll();
   }
 
+  function handlePriorityChange(value: string) {
+    setPriority(value === "ALL" ? "" : value);
+    setPage(1);
+    clearAll();
+  }
+
   function handleTagChange(value: string) {
     setTag(value);
     setPage(1);
@@ -200,6 +209,7 @@ export function TasksSection({
 
   function resetFilters() {
     applyFilters(DEFAULT_FILTERS);
+    setPriority("");
     setAssignedToMe(false);
   }
 
@@ -224,7 +234,7 @@ export function TasksSection({
     if (!open) setEditingTask(undefined);
   }
 
-  const hasFilters = Boolean(search || status || tag || assignedToMe);
+  const hasFilters = Boolean(search || status || priority || tag || assignedToMe);
   const selectedArray = [...selected];
   const hasBulkSelection = selectedArray.length > 0;
 
@@ -316,6 +326,22 @@ export function TasksSection({
               <SelectContent>
                 <SelectItem value="ALL">Todos os status</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={priority || "ALL"}
+              onValueChange={handlePriorityChange}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas</SelectItem>
+                {PRIORITY_OPTIONS.map(({ value, label }) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>
@@ -439,6 +465,9 @@ export function TasksSection({
                     <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
                       Status
                     </th>
+                    <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
+                      Prioridade
+                    </th>
                     <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
                       Tags
                     </th>
@@ -495,6 +524,10 @@ export function TasksSection({
                             projectId={projectId}
                             disabled={!canUpdate}
                           />
+                        </td>
+
+                        <td className="hidden px-4 py-3 sm:table-cell">
+                          <PriorityBadge priority={task.priority} />
                         </td>
 
                         <td className="hidden px-4 py-3 md:table-cell">

@@ -7,6 +7,7 @@ import { Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/server/repo/task-repo";
 import { AssigneeAvatar, NoAssigneeAvatar } from "@/features/tasks/components/assignee-avatar";
+import { PriorityBadge } from "@/features/tasks/components/priority-badge";
 import type { OrgMember } from "@/features/tasks/hooks/use-org-members";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -108,8 +109,13 @@ export const TaskCard = memo(function TaskCard({
         </div>
       )}
 
+      {/* Footer: prioridade + assignee */}
+      <div className="mt-2 flex items-center justify-between">
+        <PriorityBadge priority={task.priority} compact />
+      </div>
+
       {/* Assignee avatar */}
-      <div className="mt-2 flex items-center justify-end">
+      <div className="flex items-center justify-end">
         {task.assigneeUserId ? (
           (() => {
             const member = membersById[task.assigneeUserId];

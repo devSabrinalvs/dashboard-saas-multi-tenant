@@ -8,7 +8,7 @@ import { taskUpdateSchema } from "@/schemas/task";
 import { updateTask } from "@/server/use-cases/update-task";
 import { deleteTask } from "@/server/use-cases/delete-task";
 import { TaskNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { rateLimit } from "@/security/rate-limit/rate-limit";
 import { mutationKey } from "@/security/rate-limit/keys";
 import { RATE_LIMITS } from "@/security/rate-limit/constants";
@@ -46,6 +46,7 @@ export async function PATCH(
     const task = await updateTask(ctx, taskId, {
       ...parsed.data,
       status: parsed.data.status as TaskStatus | undefined,
+      priority: parsed.data.priority as Priority | undefined,
     });
     return NextResponse.json({ task });
   } catch (err) {

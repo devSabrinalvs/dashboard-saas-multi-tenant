@@ -4,12 +4,13 @@ import {
   type PaginatedResult,
   type Task,
 } from "@/server/repo/task-repo";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { getProject } from "./get-project";
 
 export type TaskQuery = {
   search?: string;
   status?: TaskStatus;
+  priority?: Priority;
   tag?: string;
   /** Se fornecido, filtra tasks atribuídas a este userId */
   assigneeUserId?: string;
@@ -36,6 +37,7 @@ export async function listTasksByProject(
     projectId,
     search: query.search,
     status: query.status,
+    priority: query.priority,
     tag: query.tag,
     assigneeUserId: query.assigneeUserId,
     page: query.page,

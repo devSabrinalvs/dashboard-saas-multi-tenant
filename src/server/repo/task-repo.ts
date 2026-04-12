@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Task } from "@/generated/prisma/client";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import type { PaginatedResult } from "./project-repo";
 export type { PaginatedResult } from "./project-repo";
 
@@ -78,6 +78,7 @@ export type TaskListParams = {
   projectId: string;
   search?: string;
   status?: TaskStatus;
+  priority?: Priority;
   tag?: string;
   /** Se fornecido, filtra tasks onde assigneeUserId = este valor */
   assigneeUserId?: string;
@@ -92,13 +93,14 @@ export type TaskListParams = {
 export async function listTasksByProject(
   params: TaskListParams
 ): Promise<PaginatedResult<Task>> {
-  const { orgId, projectId, search, status, tag, assigneeUserId, page, pageSize } = params;
+  const { orgId, projectId, search, status, priority, tag, assigneeUserId, page, pageSize } = params;
   const skip = (page - 1) * pageSize;
 
   const where = {
     orgId,
     projectId,
     ...(status ? { status } : {}),
+    ...(priority ? { priority } : {}),
     ...(tag ? { tags: { hasSome: [tag] } } : {}),
     ...(search
       ? { title: { contains: search, mode: "insensitive" as const } }
@@ -144,6 +146,7 @@ export async function createTask(data: {
   title: string;
   description?: string;
   status?: TaskStatus;
+  priority?: Priority;
   tags?: string[];
   assigneeUserId?: string | null;
 }): Promise<Task> {
@@ -175,6 +178,7 @@ export async function updateTask(
     title?: string;
     description?: string | null;
     status?: TaskStatus;
+    priority?: Priority;
     tags?: string[];
     assigneeUserId?: string | null;
   }

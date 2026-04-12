@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const TASK_STATUSES = ["TODO", "IN_PROGRESS", "DONE", "CANCELED"] as const;
+const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
 /** POST /api/org/[orgSlug]/projects/[projectId]/tasks body */
 export const taskCreateSchema = z.object({
@@ -10,6 +11,7 @@ export const taskCreateSchema = z.object({
     .max(200, "Título muito longo"),
   description: z.string().max(2000, "Descrição muito longa").optional(),
   status: z.enum(TASK_STATUSES).default("TODO"),
+  priority: z.enum(TASK_PRIORITIES).default("MEDIUM"),
   tags: z
     .array(z.string().max(24, "Tag muito longa"))
     .max(10, "Máximo 10 tags")
@@ -29,6 +31,7 @@ export const taskUpdateSchema = z
       .optional(),
     description: z.string().max(2000).nullable().optional(),
     status: z.enum(TASK_STATUSES).optional(),
+    priority: z.enum(TASK_PRIORITIES).optional(),
     tags: z.array(z.string().max(24)).max(10).optional(),
     assigneeUserId: z.string().nullable().optional(),
   })
@@ -42,6 +45,7 @@ export type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;
 export const taskQuerySchema = z.object({
   search: z.string().max(100).optional(),
   status: z.enum(TASK_STATUSES).optional(),
+  priority: z.enum(TASK_PRIORITIES).optional(),
   tag: z.string().max(24).optional(),
   /** "me" = filtrar por tasks atribuídas ao usuário autenticado */
   assignedTo: z.enum(["me"]).optional(),

@@ -5,6 +5,7 @@ import type { PaginatedResult, Task } from "@/server/repo/task-repo";
 export type TasksQueryParams = {
   search?: string;
   status?: string;
+  priority?: string;
   tag?: string;
   /** "me" = filtrar por tasks atribuídas ao usuário autenticado */
   assignedTo?: "me";

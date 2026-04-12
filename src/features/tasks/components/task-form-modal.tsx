@@ -26,6 +26,7 @@ import { useCreateTask } from "@/features/tasks/hooks/use-create-task";
 import { useUpdateTask } from "@/features/tasks/hooks/use-update-task";
 import { useOrgMembers } from "@/features/tasks/hooks/use-org-members";
 import { AssigneeSelector } from "./assignee-selector";
+import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
 import type { Task } from "@/server/repo/task-repo";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -72,12 +73,14 @@ export function TaskFormModal({
       title: task?.title ?? "",
       description: task?.description ?? "",
       status: task?.status ?? "TODO",
+      priority: task?.priority ?? "MEDIUM",
       tags: task?.tags ?? [],
       assigneeUserId: task?.assigneeUserId ?? null,
     },
   });
 
   const currentStatus = watch("status");
+  const currentPriority = watch("priority");
   const currentTags = watch("tags");
   const currentAssignee = watch("assigneeUserId");
 
@@ -87,6 +90,7 @@ export function TaskFormModal({
         title: task?.title ?? "",
         description: task?.description ?? "",
         status: task?.status ?? "TODO",
+        priority: task?.priority ?? "MEDIUM",
         tags: task?.tags ?? [],
         assigneeUserId: task?.assigneeUserId ?? null,
       });
@@ -157,6 +161,27 @@ export function TaskFormModal({
                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="task-priority">Prioridade</Label>
+            <Select
+              value={currentPriority}
+              onValueChange={(v) =>
+                setValue("priority", v as TaskCreateInput["priority"])
+              }
+            >
+              <SelectTrigger id="task-priority">
+                <SelectValue placeholder="Selecione a prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITY_OPTIONS.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>
+                    <PriorityBadge priority={value} />
                   </SelectItem>
                 ))}
               </SelectContent>

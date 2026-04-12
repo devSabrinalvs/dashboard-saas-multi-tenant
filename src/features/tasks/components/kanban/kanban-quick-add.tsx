@@ -53,7 +53,7 @@ export function KanbanQuickAdd({
     if (!trimmed) return;
 
     createMutation.mutate(
-      { title: trimmed, status, tags: [], assigneeUserId: assigneeUserId ?? null },
+      { title: trimmed, status, priority: "MEDIUM", tags: [], assigneeUserId: assigneeUserId ?? null },
       {
         onSuccess: () => {
           setTitle("");

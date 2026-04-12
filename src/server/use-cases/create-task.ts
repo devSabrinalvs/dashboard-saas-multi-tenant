@@ -1,6 +1,6 @@
 import type { OrgContext } from "@/server/org/require-org-context";
 import { createTask as repoCreateTask, countTasksByProject, type Task } from "@/server/repo/task-repo";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { getProject } from "./get-project";
 import { logAudit } from "@/server/audit/log-audit";
 import { getPlanLimits, PlanLimitReachedError } from "@/billing/plan-limits";
@@ -11,6 +11,7 @@ export type CreateTaskData = {
   title: string;
   description?: string;
   status?: TaskStatus;
+  priority?: Priority;
   tags?: string[];
   assigneeUserId?: string | null;
 };
@@ -54,6 +55,7 @@ export async function createTask(
     title: data.title,
     description: data.description,
     status: data.status,
+    priority: data.priority,
     tags: data.tags,
     assigneeUserId: data.assigneeUserId,
   });

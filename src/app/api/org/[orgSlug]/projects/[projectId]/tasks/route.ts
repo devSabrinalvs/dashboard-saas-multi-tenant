@@ -9,7 +9,7 @@ import { listTasksByProject } from "@/server/use-cases/list-tasks";
 import { createTask } from "@/server/use-cases/create-task";
 import { ProjectNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
 import { PlanLimitReachedError } from "@/billing/plan-limits";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { rateLimit } from "@/security/rate-limit/rate-limit";
 import { mutationKey } from "@/security/rate-limit/keys";
 import { RATE_LIMITS } from "@/security/rate-limit/constants";
@@ -29,6 +29,7 @@ export async function GET(
     const parsed = taskQuerySchema.safeParse({
       search: searchParams.get("search") ?? undefined,
       status: searchParams.get("status") ?? undefined,
+      priority: searchParams.get("priority") ?? undefined,
       tag: searchParams.get("tag") ?? undefined,
       assignedTo: searchParams.get("assignedTo") ?? undefined,
       page: searchParams.get("page") ?? undefined,
@@ -49,6 +50,7 @@ export async function GET(
     const result = await listTasksByProject(ctx, projectId, {
       search: parsed.data.search,
       status: parsed.data.status as TaskStatus | undefined,
+      priority: parsed.data.priority as Priority | undefined,
       tag: parsed.data.tag,
       assigneeUserId,
       page: parsed.data.page,
@@ -96,6 +98,7 @@ export async function POST(
     const task = await createTask(ctx, projectId, {
       ...parsed.data,
       status: parsed.data.status as TaskStatus | undefined,
+      priority: parsed.data.priority as Priority | undefined,
     });
     return NextResponse.json({ task }, { status: 201 });
   } catch (err) {
