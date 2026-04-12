@@ -10,6 +10,7 @@ export type UpdateTaskData = {
   description?: string | null;
   status?: TaskStatus;
   priority?: Priority;
+  dueDate?: Date | null;
   tags?: string[];
   assigneeUserId?: string | null;
 };

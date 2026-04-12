@@ -12,6 +12,7 @@ export const taskCreateSchema = z.object({
   description: z.string().max(2000, "Descrição muito longa").optional(),
   status: z.enum(TASK_STATUSES).default("TODO"),
   priority: z.enum(TASK_PRIORITIES).default("MEDIUM"),
+  dueDate: z.string().datetime({ offset: true }).nullable().optional(),
   tags: z
     .array(z.string().max(24, "Tag muito longa"))
     .max(10, "Máximo 10 tags")
@@ -32,6 +33,7 @@ export const taskUpdateSchema = z
     description: z.string().max(2000).nullable().optional(),
     status: z.enum(TASK_STATUSES).optional(),
     priority: z.enum(TASK_PRIORITIES).optional(),
+    dueDate: z.string().datetime({ offset: true }).nullable().optional(),
     tags: z.array(z.string().max(24)).max(10).optional(),
     assigneeUserId: z.string().nullable().optional(),
   })

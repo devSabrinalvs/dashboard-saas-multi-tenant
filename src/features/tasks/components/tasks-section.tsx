@@ -23,6 +23,7 @@ import { SavedFiltersMenu } from "./saved-filters-menu";
 import { KanbanBoard } from "./kanban/kanban-board";
 import { AssigneeAvatar, NoAssigneeAvatar } from "./assignee-avatar";
 import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
+import { DueDateBadge } from "./due-date-badge";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
 import { useOrgMembers } from "@/features/tasks/hooks/use-org-members";
 import { useTaskSelection } from "@/features/tasks/hooks/use-task-selection";
@@ -475,6 +476,9 @@ export function TasksSection({
                       Responsável
                     </th>
                     <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground xl:table-cell">
+                      Prazo
+                    </th>
+                    <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground xl:table-cell">
                       Criado em
                     </th>
                     <th className="w-20 px-4 py-3 text-right font-medium text-muted-foreground">
@@ -555,6 +559,16 @@ export function TasksSection({
                             })()
                           ) : (
                             <NoAssigneeAvatar size={26} />
+                          )}
+                        </td>
+                        <td className="hidden px-4 py-3 xl:table-cell">
+                          {task.dueDate ? (
+                            <DueDateBadge
+                              dueDate={task.dueDate}
+                              done={task.status === "DONE" || task.status === "CANCELED"}
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </td>
                         <td className="hidden px-4 py-3 text-muted-foreground xl:table-cell">

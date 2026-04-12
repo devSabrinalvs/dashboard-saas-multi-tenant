@@ -12,6 +12,7 @@ export type CreateTaskData = {
   description?: string;
   status?: TaskStatus;
   priority?: Priority;
+  dueDate?: Date | null;
   tags?: string[];
   assigneeUserId?: string | null;
 };
@@ -56,6 +57,7 @@ export async function createTask(
     description: data.description,
     status: data.status,
     priority: data.priority,
+    dueDate: data.dueDate,
     tags: data.tags,
     assigneeUserId: data.assigneeUserId,
   });

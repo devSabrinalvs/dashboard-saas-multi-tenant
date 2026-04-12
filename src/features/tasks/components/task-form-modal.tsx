@@ -29,6 +29,14 @@ import { AssigneeSelector } from "./assignee-selector";
 import { PriorityBadge, PRIORITY_OPTIONS } from "./priority-badge";
 import type { Task } from "@/server/repo/task-repo";
 
+/** Converte Date | string | null | undefined → "YYYY-MM-DD" para input[type=date] */
+function toDateInputValue(date?: Date | string | null): string {
+  if (!date) return "";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().split("T")[0];
+}
+
 const STATUS_LABELS: Record<string, string> = {
   TODO: "A fazer",
   IN_PROGRESS: "Em andamento",
@@ -74,6 +82,7 @@ export function TaskFormModal({
       description: task?.description ?? "",
       status: task?.status ?? "TODO",
       priority: task?.priority ?? "MEDIUM",
+      dueDate: task?.dueDate ? new Date(task.dueDate).toISOString() : null,
       tags: task?.tags ?? [],
       assigneeUserId: task?.assigneeUserId ?? null,
     },
@@ -91,6 +100,7 @@ export function TaskFormModal({
         description: task?.description ?? "",
         status: task?.status ?? "TODO",
         priority: task?.priority ?? "MEDIUM",
+        dueDate: task?.dueDate ? new Date(task.dueDate).toISOString() : null,
         tags: task?.tags ?? [],
         assigneeUserId: task?.assigneeUserId ?? null,
       });
@@ -186,6 +196,23 @@ export function TaskFormModal({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="task-due-date">Prazo</Label>
+            <Input
+              id="task-due-date"
+              type="date"
+              value={toDateInputValue(watch("dueDate"))}
+              onChange={(e) => {
+                const val = e.target.value;
+                setValue(
+                  "dueDate",
+                  val ? new Date(val + "T12:00:00.000Z").toISOString() : null
+                );
+              }}
+              disabled={isPending}
+            />
           </div>
 
           <div className="space-y-1">

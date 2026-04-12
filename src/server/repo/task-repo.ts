@@ -147,6 +147,7 @@ export async function createTask(data: {
   description?: string;
   status?: TaskStatus;
   priority?: Priority;
+  dueDate?: Date | null;
   tags?: string[];
   assigneeUserId?: string | null;
 }): Promise<Task> {
@@ -179,6 +180,7 @@ export async function updateTask(
     description?: string | null;
     status?: TaskStatus;
     priority?: Priority;
+    dueDate?: Date | null;
     tags?: string[];
     assigneeUserId?: string | null;
   }

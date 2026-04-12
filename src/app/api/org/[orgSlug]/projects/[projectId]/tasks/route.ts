@@ -99,6 +99,7 @@ export async function POST(
       ...parsed.data,
       status: parsed.data.status as TaskStatus | undefined,
       priority: parsed.data.priority as Priority | undefined,
+      dueDate: parsed.data.dueDate != null ? new Date(parsed.data.dueDate) : (parsed.data.dueDate as null | undefined),
     });
     return NextResponse.json({ task }, { status: 201 });
   } catch (err) {

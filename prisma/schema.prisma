@@ -263,6 +263,8 @@ model Task {
   status      TaskStatus @default(TODO)
   /// Prioridade da tarefa. Padrão: MEDIUM.
   priority    Priority   @default(MEDIUM)
+  /// Data de vencimento. Null = sem prazo.
+  dueDate     DateTime?
   /// Tags livres para filtragem (ex: ["bug", "urgente"]).
   tags        String[]
   /// Responsável pela tarefa. Null = sem responsável. Deve ser membro da org.

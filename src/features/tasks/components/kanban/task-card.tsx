@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { Task } from "@/server/repo/task-repo";
 import { AssigneeAvatar, NoAssigneeAvatar } from "@/features/tasks/components/assignee-avatar";
 import { PriorityBadge } from "@/features/tasks/components/priority-badge";
+import { DueDateBadge } from "@/features/tasks/components/due-date-badge";
 import type { OrgMember } from "@/features/tasks/hooks/use-org-members";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -109,9 +110,15 @@ export const TaskCard = memo(function TaskCard({
         </div>
       )}
 
-      {/* Footer: prioridade + assignee */}
-      <div className="mt-2 flex items-center justify-between">
+      {/* Footer: prioridade + prazo */}
+      <div className="mt-2 flex items-center justify-between gap-1">
         <PriorityBadge priority={task.priority} compact />
+        {task.dueDate && (
+          <DueDateBadge
+            dueDate={task.dueDate}
+            done={task.status === "DONE" || task.status === "CANCELED"}
+          />
+        )}
       </div>
 
       {/* Assignee avatar */}

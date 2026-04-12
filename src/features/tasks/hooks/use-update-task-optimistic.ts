@@ -45,9 +45,17 @@ export function useUpdateTaskOptimistic(orgSlug: string, projectId: string) {
           if (!old) return old;
           return {
             ...old,
-            items: old.items.map((t) =>
-              t.id === taskId ? { ...t, ...data } : t
-            ),
+            items: old.items.map((t) => {
+              if (t.id !== taskId) return t;
+              const { dueDate, ...rest } = data;
+              return {
+                ...t,
+                ...rest,
+                ...(dueDate !== undefined
+                  ? { dueDate: dueDate ? new Date(dueDate) : null }
+                  : {}),
+              };
+            }),
           };
         }
       );
