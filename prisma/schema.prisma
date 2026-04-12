@@ -111,6 +111,8 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   /// Tarefas atribuídas a este usuário.
   assignedTasks           Task[]                   @relation("TaskAssignee")
+  /// Comentários feitos pelo usuário em tasks.
+  taskComments            TaskComment[]             @relation("TaskComments")
 }
 
 model Account {
@@ -282,10 +284,29 @@ model Task {
   parent       Task?        @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
   /// Sub-tarefas desta task.
   subTasks     Task[]       @relation("SubTasks")
+  /// Comentários desta task.
+  comments     TaskComment[]
 
   @@index([orgId, projectId, status])
   @@index([orgId, assigneeUserId])
   @@index([parentTaskId])
+}
+
+/// Comentário em uma tarefa. Append-friendly — edição só pelo autor.
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  orgId     String
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation("TaskComments", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([orgId])
 }
 
 /// Token de verificação de email (gerado no signup / reenvio).

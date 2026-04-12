@@ -655,6 +655,8 @@ export function TasksSection({
         canCreate={canCreate}
         canUpdate={canUpdate}
         canDelete={canDelete}
+        canAdminDelete={canDelete}
+        currentUserId={currentUserId}
       />
     </section>
   );
