@@ -4,6 +4,7 @@ import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -67,9 +68,10 @@ export function Topbar({ userEmail, userName, orgName }: TopbarProps) {
         )}
       </div>
 
-      {/* Right — theme toggle + profile */}
+      {/* Right — theme toggle + notifications + profile */}
       <div className="flex items-center gap-1 shrink-0">
         <ThemeToggle />
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -4,6 +4,7 @@ import type { TaskStatus, Priority } from "@/generated/prisma/enums";
 import { TaskNotFoundError, AssigneeNotInOrgError } from "@/server/errors/project-errors";
 import { logAudit } from "@/server/audit/log-audit";
 import { findMembership } from "@/server/repo/membership-repo";
+import { createNotification } from "@/server/notifications/create-notification";
 
 export type UpdateTaskData = {
   title?: string;
@@ -47,6 +48,21 @@ export async function updateTask(
     action: "task.updated",
     metadata: { taskId, changes: data },
   });
+
+  // Notificar novo responsável se mudou e é diferente do editor
+  if (
+    data.assigneeUserId &&
+    data.assigneeUserId !== existing.assigneeUserId &&
+    data.assigneeUserId !== ctx.userId
+  ) {
+    void createNotification({
+      userId: data.assigneeUserId,
+      orgId: ctx.orgId,
+      type: "task.assigned",
+      message: `Você foi atribuído à tarefa "${task.title}".`,
+      link: `/org/${ctx.orgSlug}/projects/${task.projectId}`,
+    });
+  }
 
   return task;
 }

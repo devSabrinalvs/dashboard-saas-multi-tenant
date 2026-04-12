@@ -113,6 +113,8 @@ model User {
   assignedTasks           Task[]                   @relation("TaskAssignee")
   /// Comentários feitos pelo usuário em tasks.
   taskComments            TaskComment[]             @relation("TaskComments")
+  /// Notificações recebidas pelo usuário.
+  notifications           Notification[]            @relation("UserNotifications")
 }
 
 model Account {
@@ -306,6 +308,27 @@ model TaskComment {
   author User @relation("TaskComments", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@index([orgId])
+}
+
+/// Notificação in-app para um usuário.
+/// Tipos: "task.assigned" | "task.commented" | "task.due_soon"
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  orgId     String
+  /// Tipo da notificação
+  type      String
+  /// Mensagem legível
+  message   String
+  /// Link para a entidade relacionada (ex: /org/slug/projects/id)
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
   @@index([orgId])
 }
 

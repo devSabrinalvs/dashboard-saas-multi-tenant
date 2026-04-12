@@ -6,6 +6,7 @@ import { logAudit } from "@/server/audit/log-audit";
 import { getPlanLimits, PlanLimitReachedError } from "@/billing/plan-limits";
 import { findMembership } from "@/server/repo/membership-repo";
 import { AssigneeNotInOrgError } from "@/server/errors/project-errors";
+import { createNotification } from "@/server/notifications/create-notification";
 
 export type CreateTaskData = {
   title: string;
@@ -68,6 +69,17 @@ export async function createTask(
     action: "task.created",
     metadata: { taskId: task.id, projectId, title: task.title },
   });
+
+  // Notificar o responsável se for diferente do criador
+  if (task.assigneeUserId && task.assigneeUserId !== ctx.userId) {
+    void createNotification({
+      userId: task.assigneeUserId,
+      orgId: ctx.orgId,
+      type: "task.assigned",
+      message: `Você foi atribuído à tarefa "${task.title}".`,
+      link: `/org/${ctx.orgSlug}/projects/${projectId}`,
+    });
+  }
 
   return task;
 }

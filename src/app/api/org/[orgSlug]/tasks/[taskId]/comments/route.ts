@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { requireOrgContext } from "@/server/org/require-org-context";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { createNotification } from "@/server/notifications/create-notification";
 
 const createSchema = z.object({
   content: z.string().min(1, "Comentário não pode ser vazio").max(2000),
@@ -66,6 +67,17 @@ export async function POST(
       author: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // Notificar o responsável da task (se existir e for diferente do autor)
+  if (task.assigneeUserId && task.assigneeUserId !== ctx.userId) {
+    void createNotification({
+      userId: task.assigneeUserId,
+      orgId: ctx.orgId,
+      type: "task.commented",
+      message: `Novo comentário na tarefa "${task.title}".`,
+      link: `/org/${orgSlug}/projects/${task.projectId}`,
+    });
+  }
 
   return NextResponse.json({ comment }, { status: 201 });
 }
