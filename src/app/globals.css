@@ -158,27 +158,103 @@
   display: flex;
   flex-direction: column;
   /* Substitui o ring azul do dark-mode por branco/neutro */
-  --ring:  rgba(255, 255, 255, 0.28);
-  --input: rgba(255, 255, 255, 0.09);
+  --ring: rgba(255, 255, 255, 0.28);
 }
 @media (min-width: 768px) {
   .auth-shell-left { width: 430px; }
 }
 
-/* Inputs: fundo escuro sólido + borda discreta + transição suave */
-.auth-shell-left [data-slot="input"] {
-  background-color: #161616;
-  border-color: rgba(255, 255, 255, 0.09);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+/* ── Label ───────────────────────────────────────────────────────────────── */
+.auth-shell-left [data-slot="label"] {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a4a4a;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
-/* Autofill: sem o fundo amarelo/azul do browser */
+/* ── Input ───────────────────────────────────────────────────────────────── */
+.auth-shell-left [data-slot="input"] {
+  height: auto;
+  padding: 13px 16px;
+  border-radius: 7px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #efefef;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  caret-color: #fff;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.18s ease;
+}
+
+/* Password: espaço para o olho */
+.auth-shell-left [data-slot="input"].pr-10 {
+  padding-right: 44px;
+}
+
+/* Focus: só borda branca, sem glow azul */
+.auth-shell-left [data-slot="input"]:focus-visible {
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: none;
+  outline: none;
+}
+
+/* Autofill: sem fundo amarelo/azul do browser */
 .auth-shell-left [data-slot="input"]:-webkit-autofill,
 .auth-shell-left [data-slot="input"]:-webkit-autofill:hover,
 .auth-shell-left [data-slot="input"]:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px #161616 inset;
   -webkit-text-fill-color: #efefef;
   transition: background-color 9999s;
+}
+
+/* ── Botão submit (principal) ────────────────────────────────────────────── */
+.auth-shell-left [data-slot="button"][type="submit"] {
+  height: auto;
+  padding: 14px 16px;
+  border-radius: 7px;
+  background-color: #f0f0f0;
+  color: #080808;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  box-shadow: none;
+  transform: none;
+  transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.auth-shell-left [data-slot="button"][type="submit"]:hover:not(:disabled) {
+  background-color: #e8e8e8;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08);
+}
+.auth-shell-left [data-slot="button"][type="submit"]:disabled {
+  background-color: #222;
+  color: #444;
+  opacity: 1;
+}
+
+/* ── Botões OAuth (outline) ──────────────────────────────────────────────── */
+.auth-shell-left [data-slot="button"][data-variant="outline"] {
+  height: auto;
+  padding: 12px 14px;
+  border-radius: 7px;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #c0c0c0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+.auth-shell-left [data-slot="button"][data-variant="outline"]:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #c0c0c0;
 }
 
 /* Right panel: oculto no mobile */
