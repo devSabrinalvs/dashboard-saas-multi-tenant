@@ -151,27 +151,37 @@
 .auth-carousel-enter-fwd { animation: auth-carousel-enter-fwd 0.42s cubic-bezier(0.0,0,0.2,1) forwards; }
 .auth-carousel-enter-bwd { animation: auth-carousel-enter-bwd 0.42s cubic-bezier(0.0,0,0.2,1) forwards; }
 
-/* Autofill override for dark auth inputs */
-.auth-field-input:-webkit-autofill,
-.auth-field-input:-webkit-autofill:hover,
-.auth-field-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px #161616 inset;
-  -webkit-text-fill-color: #efefef;
-  transition: background-color 9999s;
-}
-
-/* Left panel: full-width on mobile, fixed on desktop */
+/* Left panel: full-width no mobile, 430 px no desktop */
 .auth-shell-left {
   width: 100%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  /* Substitui o ring azul do dark-mode por branco/neutro */
+  --ring:  rgba(255, 255, 255, 0.28);
+  --input: rgba(255, 255, 255, 0.09);
 }
 @media (min-width: 768px) {
   .auth-shell-left { width: 430px; }
 }
 
-/* Right panel: hidden on mobile */
+/* Inputs: fundo escuro sólido + borda discreta + transição suave */
+.auth-shell-left [data-slot="input"] {
+  background-color: #161616;
+  border-color: rgba(255, 255, 255, 0.09);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Autofill: sem o fundo amarelo/azul do browser */
+.auth-shell-left [data-slot="input"]:-webkit-autofill,
+.auth-shell-left [data-slot="input"]:-webkit-autofill:hover,
+.auth-shell-left [data-slot="input"]:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #161616 inset;
+  -webkit-text-fill-color: #efefef;
+  transition: background-color 9999s;
+}
+
+/* Right panel: oculto no mobile */
 .auth-shell-right {
   display: none;
 }
