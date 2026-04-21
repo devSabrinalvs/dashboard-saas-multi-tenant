@@ -1,5 +1,5 @@
-import { SignupForm } from "@/features/auth/components/signup-form";
-
+// AuthShell in (public)/layout.tsx renders the full signup screen.
+// This page intentionally returns null.
 export default function SignupPage() {
-  return <SignupForm />;
+  return null;
 }

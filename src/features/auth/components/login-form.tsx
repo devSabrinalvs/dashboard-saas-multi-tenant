@@ -104,7 +104,11 @@ function useLockCountdown(lockedUntilMs: number | null) {
 // Component
 // ---------------------------------------------------------------------------
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSwitchToSignup?: () => void;
+}
+
+export function LoginForm({ onSwitchToSignup }: LoginFormProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isJustVerified = searchParams.get("verified") === "1";
@@ -362,16 +366,15 @@ export function LoginForm() {
         </Button>
       </form>
 
-      {/* Footer link */}
-      <p className="text-center text-sm text-muted-foreground">
-        Não tem conta?{" "}
-        <Link
-          href="/signup"
-          className="font-medium text-foreground hover:underline"
-        >
-          Criar conta
-        </Link>
-      </p>
+      {/* Footer link — hidden when shell handles navigation */}
+      {!onSwitchToSignup && (
+        <p className="text-center text-sm text-muted-foreground">
+          Não tem conta?{" "}
+          <Link href="/signup" className="font-medium text-foreground hover:underline">
+            Criar conta
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

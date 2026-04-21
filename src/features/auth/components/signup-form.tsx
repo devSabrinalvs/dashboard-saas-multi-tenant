@@ -77,7 +77,11 @@ function PasswordStrengthIndicator({ value }: { value: string }) {
   );
 }
 
-export function SignupForm() {
+interface SignupFormProps {
+  onSwitchToLogin?: () => void;
+}
+
+export function SignupForm({ onSwitchToLogin }: SignupFormProps = {}) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -283,13 +287,15 @@ export function SignupForm() {
         </Button>
       </form>
 
-      {/* Footer link */}
-      <p className="text-center text-sm text-muted-foreground">
-        Já tem uma conta?{" "}
-        <Link href="/login" className="font-medium text-foreground hover:underline">
-          Entrar
-        </Link>
-      </p>
+      {/* Footer link — hidden when shell handles navigation */}
+      {!onSwitchToLogin && (
+        <p className="text-center text-sm text-muted-foreground">
+          Já tem uma conta?{" "}
+          <Link href="/login" className="font-medium text-foreground hover:underline">
+            Entrar
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

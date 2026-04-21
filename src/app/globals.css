@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -120,5 +121,59 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ─── Auth Shell ─────────────────────────────────────────────────────────────── */
+
+@keyframes auth-form-exit-fwd  { from { opacity:1; transform: translateX(0) scale(1); } to { opacity:0; transform: translateX(-28px) scale(0.985); } }
+@keyframes auth-form-exit-bwd  { from { opacity:1; transform: translateX(0) scale(1); } to { opacity:0; transform: translateX(28px) scale(0.985); } }
+@keyframes auth-form-enter-fwd { from { opacity:0; transform: translateX(28px) scale(0.985); } to { opacity:1; transform: translateX(0) scale(1); } }
+@keyframes auth-form-enter-bwd { from { opacity:0; transform: translateX(-28px) scale(0.985); } to { opacity:1; transform: translateX(0) scale(1); } }
+
+@keyframes auth-carousel-exit-fwd  { from { opacity:1; transform: translateX(0); } to { opacity:0; transform: translateX(-32px); } }
+@keyframes auth-carousel-exit-bwd  { from { opacity:1; transform: translateX(0); } to { opacity:0; transform: translateX(32px); } }
+@keyframes auth-carousel-enter-fwd { from { opacity:0; transform: translateX(32px); } to { opacity:1; transform: translateX(0); } }
+@keyframes auth-carousel-enter-bwd { from { opacity:0; transform: translateX(-32px); } to { opacity:1; transform: translateX(0); } }
+
+.auth-exit-fwd  { animation: auth-form-exit-fwd  0.26s cubic-bezier(0.4,0,0.2,1) forwards; }
+.auth-exit-bwd  { animation: auth-form-exit-bwd  0.26s cubic-bezier(0.4,0,0.2,1) forwards; }
+.auth-enter-fwd { animation: auth-form-enter-fwd 0.32s cubic-bezier(0.0,0,0.2,1) forwards; }
+.auth-enter-bwd { animation: auth-form-enter-bwd 0.32s cubic-bezier(0.0,0,0.2,1) forwards; }
+
+.auth-carousel-exit-fwd  { animation: auth-carousel-exit-fwd  0.26s cubic-bezier(0.4,0,0.2,1) forwards; }
+.auth-carousel-exit-bwd  { animation: auth-carousel-exit-bwd  0.26s cubic-bezier(0.4,0,0.2,1) forwards; }
+.auth-carousel-enter-fwd { animation: auth-carousel-enter-fwd 0.42s cubic-bezier(0.0,0,0.2,1) forwards; }
+.auth-carousel-enter-bwd { animation: auth-carousel-enter-bwd 0.42s cubic-bezier(0.0,0,0.2,1) forwards; }
+
+/* Autofill override for dark auth inputs */
+.auth-field-input:-webkit-autofill,
+.auth-field-input:-webkit-autofill:hover,
+.auth-field-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #161616 inset;
+  -webkit-text-fill-color: #efefef;
+  transition: background-color 9999s;
+}
+
+/* Left panel: full-width on mobile, fixed on desktop */
+.auth-shell-left {
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 768px) {
+  .auth-shell-left { width: 430px; }
+}
+
+/* Right panel: hidden on mobile */
+.auth-shell-right {
+  display: none;
+}
+@media (min-width: 768px) {
+  .auth-shell-right {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
   }
 }

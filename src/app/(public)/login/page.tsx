@@ -1,11 +1,5 @@
-import { Suspense } from "react";
-import { LoginForm } from "@/features/auth/components/login-form";
-
+// AuthShell in (public)/layout.tsx renders the full login screen.
+// This page intentionally returns null.
 export default function LoginPage() {
-  return (
-    // Suspense required because LoginForm uses useSearchParams
-    <Suspense fallback={<div className="h-64 w-full" aria-hidden />}>
-      <LoginForm />
-    </Suspense>
-  );
+  return null;
 }
