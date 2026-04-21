@@ -8,8 +8,8 @@ type Mode = "login" | "signup";
 type AnimPhase = "idle" | "exit" | "enter";
 type AnimDir = "fwd" | "bwd";
 
-const FONT = "'Space Grotesk', sans-serif";
-const HEADLINE_FONT = "'Bebas Neue', sans-serif";
+const FONT = "var(--font-space-grotesk), sans-serif";
+const HEADLINE_FONT = "var(--font-bebas-neue), sans-serif";
 const HEADLINE_SIZE = 128;
 
 // ─── Logo mark ────────────────────────────────────────────────────────────────
