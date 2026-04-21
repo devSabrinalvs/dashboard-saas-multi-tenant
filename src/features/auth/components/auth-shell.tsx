@@ -514,7 +514,7 @@ const SLIDES: SlideConfig[] = [
   {
     tag: "02",
     lines: ["SEU TIME TODO,", "UM SÓ LUGAR."],
-    headlineScale: 0.58,
+    headlineScale: 1.0,
     sub: "Convide membros, defina papéis e\nacompanhe o progresso em cada projeto.",
     Mockup: TeamMockup,
   },
