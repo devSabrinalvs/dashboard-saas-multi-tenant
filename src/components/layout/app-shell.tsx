@@ -1,5 +1,4 @@
 import { SidebarNav } from "./sidebar-nav";
-import { Topbar } from "./topbar";
 import type { OrgLink } from "./org-switcher";
 import { BillingBanner } from "@/features/billing/components/billing-banner";
 import type { BillingBannerType } from "@/billing/billing-state";
@@ -35,24 +34,44 @@ export function AppShell({
   billingBanner,
 }: AppShellProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <SidebarNav orgSlug={orgSlug} orgName={orgName} userOrgs={userOrgs} canAudit={canAudit} canBilling={canBilling} canDataExport={canDataExport} />
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        background: "#080808",
+        overflow: "hidden",
+      }}
+    >
+      <SidebarNav
+        orgSlug={orgSlug}
+        orgName={orgName}
+        userOrgs={userOrgs}
+        userEmail={userEmail}
+        userName={userName}
+        canAudit={canAudit}
+        canBilling={canBilling}
+        canDataExport={canDataExport}
+      />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar userEmail={userEmail} userName={userName} orgName={orgName} />
-        <main className="flex-1 overflow-auto p-6">
-          {billingBanner?.bannerType && (
-            <BillingBanner
-              bannerType={billingBanner.bannerType}
-              orgSlug={orgSlug}
-              graceUntilMs={billingBanner.graceUntilMs}
-              currentPeriodEndMs={billingBanner.currentPeriodEndMs}
-              canManageBilling={!!canBilling}
-            />
-          )}
-          {children}
-        </main>
-      </div>
+      <main
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "28px 40px 48px",
+          position: "relative",
+        }}
+      >
+        {billingBanner?.bannerType && (
+          <BillingBanner
+            bannerType={billingBanner.bannerType}
+            orgSlug={orgSlug}
+            graceUntilMs={billingBanner.graceUntilMs}
+            currentPeriodEndMs={billingBanner.currentPeriodEndMs}
+            canManageBilling={!!canBilling}
+          />
+        )}
+        {children}
+      </main>
     </div>
   );
 }

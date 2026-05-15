@@ -757,6 +757,219 @@ function RightPanel() {
   );
 }
 
+// ─── Centered Shell (org-select — no right panel, content centered) ──────────
+
+interface CenteredShellProps {
+  children: React.ReactNode;
+  topBarRight?: React.ReactNode;
+  footer?: React.ReactNode;
+  contentMaxWidth?: number;
+}
+
+export function CenteredShell({
+  children,
+  topBarRight,
+  footer,
+  contentMaxWidth = 460,
+}: CenteredShellProps) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#080808",
+        overflow: "hidden",
+        fontFamily: FONT,
+        position: "relative",
+      }}
+    >
+      {/* Fine grid */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
+          backgroundSize: "52px 52px",
+        }}
+      />
+      {/* Corner accents */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "260px", height: "1px", background: "linear-gradient(90deg,rgba(255,255,255,0.08),transparent)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, width: "1px", height: "260px", background: "linear-gradient(180deg,rgba(255,255,255,0.08),transparent)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: 0, right: 0, width: "180px", height: "1px", background: "linear-gradient(270deg,rgba(255,255,255,0.06),transparent)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: 0, right: 0, width: "1px", height: "180px", background: "linear-gradient(0deg,rgba(255,255,255,0.06),transparent)", pointerEvents: "none" }} />
+
+      {/* Top bar */}
+      <div
+        style={{
+          padding: "36px 64px 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          position: "relative",
+          zIndex: 1,
+          flexShrink: 0,
+        }}
+      >
+        <a
+          href="/login"
+          style={{ display: "flex", alignItems: "center", gap: "9px", textDecoration: "none" }}
+        >
+          <LogoMark />
+          <span style={{ fontFamily: HEADLINE_FONT, fontSize: "19px", letterSpacing: "0.08em", color: "#e8e8e8" }}>
+            PROJORG
+          </span>
+        </a>
+        {topBarRight}
+      </div>
+
+      {/* Centered content */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          zIndex: 1,
+          padding: "0 32px",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: `${contentMaxWidth}px` }}>
+          {children}
+        </div>
+      </div>
+
+      {/* Footer */}
+      {footer && (
+        <div
+          style={{
+            padding: "0 64px 36px",
+            textAlign: "center",
+            position: "relative",
+            zIndex: 1,
+            flexShrink: 0,
+          }}
+        >
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Auth Page Shell (generic — verify-email, forgot-password, reset-password) ─
+
+interface AuthPageShellProps {
+  children: React.ReactNode;
+  topBarRight?: React.ReactNode;
+  footer?: React.ReactNode;
+}
+
+export function AuthPageShell({ children, topBarRight, footer }: AuthPageShellProps) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        display: "flex",
+        background: "#080808",
+        overflow: "hidden",
+        fontFamily: FONT,
+      }}
+    >
+      {/* ── Left panel ────────────────────────────────────────────────────── */}
+      <div
+        className="auth-shell-left dark"
+        style={{
+          background: "#0d0d0d",
+          borderRight: "1px solid rgba(255,255,255,0.045)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Subtle radial gradient */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            backgroundImage:
+              "radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,255,255,0.015) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Top bar */}
+        <div
+          style={{
+            padding: "36px 48px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          <a
+            href="/login"
+            style={{ display: "flex", alignItems: "center", gap: "9px", textDecoration: "none" }}
+          >
+            <LogoMark />
+            <span
+              style={{
+                fontFamily: HEADLINE_FONT,
+                fontSize: "19px",
+                letterSpacing: "0.08em",
+                color: "#e8e8e8",
+              }}
+            >
+              PROJORG
+            </span>
+          </a>
+          {topBarRight}
+        </div>
+
+        {/* Form area — scrollable, vertically centered */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "0 48px",
+            overflowY: "auto",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          {children}
+        </div>
+
+        {/* Footer */}
+        {footer && (
+          <div
+            style={{
+              padding: "0 48px 36px",
+              textAlign: "center",
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+            {footer}
+          </div>
+        )}
+      </div>
+
+      {/* ── Right panel (carousel) ─────────────────────────────────────── */}
+      <RightPanel />
+    </div>
+  );
+}
+
 // ─── Auth Shell ───────────────────────────────────────────────────────────────
 
 interface AuthShellProps {

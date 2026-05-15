@@ -14,9 +14,9 @@
  */
 
 import { timingSafeEqual } from "crypto";
+import { CSRF_HEADER } from "./csrf-constants";
 
-export const CSRF_COOKIE  = "csrf_token";
-export const CSRF_HEADER  = "x-csrf-token";
+export { CSRF_COOKIE, CSRF_HEADER } from "./csrf-constants";
 
 /**
  * Extrai o valor do cookie `csrf_token` a partir do header Cookie raw.

@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Lock, Mail, Loader2, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { TurnstileWidget } from "./turnstile-widget";
+import { AuthPageShell } from "./auth-shell";
+
+const FONT = "var(--font-space-grotesk), sans-serif";
 
 const formSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -20,6 +22,7 @@ type FormData = z.infer<typeof formSchema>;
 export function ForgotPasswordForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
 
@@ -28,23 +31,18 @@ export function ForgotPasswordForm() {
     handleSubmit,
     getValues,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-  });
+  } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   async function onSubmit(data: FormData) {
     setServerError(null);
-
     const res = await fetch("/api/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: data.email,
-        turnstileToken: turnstileToken ?? "",
-      }),
+      body: JSON.stringify({ email: data.email, turnstileToken: turnstileToken ?? "" }),
     });
 
     if (res.status === 200) {
+      setSubmittedEmail(data.email);
       setSubmitted(true);
       return;
     }
@@ -60,103 +58,225 @@ export function ForgotPasswordForm() {
       setServerError("Verificação anti-bot falhou. Tente novamente.");
       return;
     }
-
     setServerError("Erro ao processar solicitação. Tente novamente.");
   }
 
-  if (submitted) {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Verifique seu email</h1>
-          <p className="text-sm text-muted-foreground">
-            Se existir uma conta verificada com o email{" "}
-            <span className="font-medium text-foreground">{getValues("email")}</span>,
-            você receberá um link para redefinir sua senha em breve.
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          <Mail className="mb-1.5 size-4 text-foreground" aria-hidden />
-          Verifique também sua pasta de spam caso não encontre o email.
-        </div>
-
-        <p className="text-center text-sm text-muted-foreground">
-          <Link href="/login" className="font-medium text-foreground hover:underline">
-            ← Voltar para o login
-          </Link>
-        </p>
-      </div>
-    );
+  function handleRetry() {
+    setSubmitted(false);
+    setSubmittedEmail("");
+    setServerError(null);
+    setTurnstileKey((k) => k + 1);
+    setTurnstileToken(null);
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Recuperar senha</h1>
-        <p className="text-sm text-muted-foreground">
-          Informe seu email e enviaremos um link para redefinir sua senha.
+    <AuthPageShell
+      topBarRight={
+        <a
+          href="/login"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: "7px",
+            fontSize: "12px", color: "#555", textDecoration: "none",
+            fontFamily: FONT, letterSpacing: "0.02em", transition: "color 0.15s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#bbb")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}
+        >
+          ← Login
+        </a>
+      }
+      footer={
+        <p style={{ fontSize: "12px", color: "#333", fontFamily: FONT }}>
+          Lembrou a senha?{" "}
+          <a href="/login" style={{ color: "#666", textDecoration: "none" }}>Entrar</a>
         </p>
-      </div>
+      }
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: "26px", paddingTop: "8px", paddingBottom: "8px" }}>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="forgot-email">Email</Label>
-          <Input
-            id="forgot-email"
-            type="email"
-            placeholder="voce@exemplo.com"
-            autoComplete="email"
-            aria-invalid={!!errors.email}
-            data-testid="forgot-email"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-xs text-destructive" role="alert">
-              {errors.email.message}
-            </p>
-          )}
+        {/* Lock icon */}
+        <div style={{
+          width: "56px", height: "56px", borderRadius: "12px",
+          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "center", color: "#bdbdbd",
+        }}>
+          <Lock size={22} strokeWidth={1.5} />
         </div>
 
-        {serverError && (
-          <div
-            className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
-            role="alert"
-          >
-            <AlertCircle className="size-4 mt-0.5 shrink-0" />
-            <span>{serverError}</span>
+        {/* Header */}
+        <div>
+          <div style={{
+            fontSize: "11px", fontWeight: 600, color: "#5a5a5a",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+            marginBottom: "14px", fontFamily: FONT,
+          }}>
+            Recuperação
           </div>
+          <h2 style={{
+            fontSize: "26px", fontWeight: 600, color: "#efefef",
+            letterSpacing: "-0.025em", marginBottom: "8px", lineHeight: 1.18, fontFamily: FONT,
+          }}>
+            {submitted ? "Confira seu email" : "Esqueceu a senha?"}
+          </h2>
+          <p style={{ fontSize: "13px", color: "#4a4a4a", lineHeight: 1.6, fontFamily: FONT }}>
+            {submitted
+              ? "Se o endereço estiver registrado, enviamos um link para criar uma nova senha. O link expira em 30 minutos."
+              : "Sem problemas. Informe o email da sua conta e enviaremos um link para criar uma nova senha."}
+          </p>
+        </div>
+
+        {/* ── Form state ───────────────────────────────────────────────── */}
+        {!submitted && (
+          <>
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              noValidate
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              <div className="space-y-1.5">
+                <Label htmlFor="forgot-email">Email da conta</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="voce@empresa.com"
+                  autoComplete="email"
+                  aria-invalid={!!errors.email}
+                  data-testid="forgot-email"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p style={{ fontSize: "11px", color: "#9a5a5a", fontFamily: FONT }}>
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {serverError && (
+                <div style={{
+                  display: "flex", alignItems: "flex-start", gap: "8px",
+                  padding: "10px 12px",
+                  background: "rgba(255,255,255,0.018)",
+                  border: "1px solid rgba(200,80,80,0.15)",
+                  borderRadius: "7px",
+                  fontSize: "12px", color: "#9a5a5a", fontFamily: FONT,
+                }}>
+                  <AlertCircle size={14} style={{ marginTop: "1px", flexShrink: 0 }} />
+                  <span>{serverError}</span>
+                </div>
+              )}
+
+              <TurnstileWidget
+                key={turnstileKey}
+                onToken={(t) => setTurnstileToken(t)}
+                onExpire={() => setTurnstileToken(null)}
+              />
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+                data-testid="forgot-submit"
+              >
+                {isSubmitting ? (
+                  <><Loader2 className="size-4 animate-spin" /> Enviando…</>
+                ) : (
+                  "Enviar link de recuperação"
+                )}
+              </Button>
+            </form>
+
+            {/* Info box */}
+            <div style={{
+              display: "flex", alignItems: "flex-start", gap: "10px",
+              padding: "13px 14px",
+              background: "rgba(255,255,255,0.018)",
+              border: "1px solid rgba(255,255,255,0.05)",
+              borderRadius: "7px",
+            }}>
+              <div style={{
+                marginTop: "2px", width: "14px", height: "14px", borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,0.18)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "9px", color: "#666", fontFamily: FONT, fontWeight: 600, flexShrink: 0,
+              }}>
+                i
+              </div>
+              <p style={{ fontSize: "11.5px", color: "#5a5a5a", lineHeight: 1.55, fontFamily: FONT }}>
+                Por segurança, não confirmamos se um email existe na nossa base. Se sua conta estiver
+                ativa, o link chegará em até 1 minuto.
+              </p>
+            </div>
+          </>
         )}
 
-        <TurnstileWidget
-          key={turnstileKey}
-          onToken={(t) => setTurnstileToken(t)}
-          onExpire={() => setTurnstileToken(null)}
-        />
+        {/* ── Sent state ───────────────────────────────────────────────── */}
+        {submitted && (
+          <>
+            {/* Email card */}
+            <div style={{
+              background: "rgba(255,255,255,0.022)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: "9px", padding: "14px 16px",
+              display: "flex", alignItems: "center", gap: "12px",
+            }}>
+              <div style={{
+                width: "34px", height: "34px", borderRadius: "7px",
+                background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#7a7a7a", flexShrink: 0,
+              }}>
+                <Mail size={16} strokeWidth={1.6} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: "10px", fontWeight: 600, color: "#3a3a3a",
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  fontFamily: FONT, marginBottom: "3px",
+                }}>
+                  Enviado para
+                </div>
+                <div style={{
+                  fontSize: "14px", color: "#d8d8d8", fontFamily: FONT,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                }}>
+                  {submittedEmail}
+                </div>
+              </div>
+            </div>
 
-        <Button
-          type="submit"
-          className="w-full bg-foreground text-background hover:bg-foreground/90"
-          disabled={isSubmitting}
-          data-testid="forgot-submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Enviando…
-            </>
-          ) : (
-            "Enviar link de recuperação"
-          )}
-        </Button>
-      </form>
+            {/* Open inbox button */}
+            <a
+              href="https://mail.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block", width: "100%", padding: "14px",
+                background: "#f0f0f0", borderRadius: "7px",
+                color: "#080808", fontSize: "14px", fontWeight: 600,
+                fontFamily: FONT, textAlign: "center", textDecoration: "none",
+                letterSpacing: "0.025em", transition: "background 0.18s ease",
+                boxSizing: "border-box",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#e8e8e8")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#f0f0f0")}
+            >
+              Abrir caixa de entrada
+            </a>
 
-      <p className="text-center text-sm text-muted-foreground">
-        Lembrou a senha?{" "}
-        <Link href="/login" className="font-medium text-foreground hover:underline">
-          Entrar
-        </Link>
-      </p>
-    </div>
+            <button
+              type="button"
+              onClick={handleRetry}
+              style={{
+                fontSize: "12px", color: "#666", background: "none",
+                border: "none", padding: 0, cursor: "pointer",
+                fontFamily: FONT, textAlign: "left",
+              }}
+            >
+              Usar outro email →
+            </button>
+          </>
+        )}
+      </div>
+    </AuthPageShell>
   );
 }

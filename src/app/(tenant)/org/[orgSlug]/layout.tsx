@@ -49,20 +49,22 @@ export default async function TenantLayout({
     : null;
 
   return (
-    <AppShell
-      userEmail={ctx.email}
-      userName={userProfile?.name}
-      orgSlug={ctx.orgSlug}
-      orgName={ctx.orgName}
-      userOrgs={userOrgs}
-      canAudit={canAudit}
-      canBilling={canBilling}
-      canDataExport={canDataExport}
-      billingBanner={billingBanner}
-    >
-      <SessionPing />
-      <WelcomeBanner orgSlug={ctx.orgSlug} orgName={ctx.orgName} />
-      {children}
-    </AppShell>
+    <div className="dark">
+      <AppShell
+        userEmail={ctx.email}
+        userName={userProfile?.name}
+        orgSlug={ctx.orgSlug}
+        orgName={ctx.orgName}
+        userOrgs={userOrgs}
+        canAudit={canAudit}
+        canBilling={canBilling}
+        canDataExport={canDataExport}
+        billingBanner={billingBanner}
+      >
+        <SessionPing />
+        <WelcomeBanner orgSlug={ctx.orgSlug} orgName={ctx.orgName} />
+        {children}
+      </AppShell>
+    </div>
   );
 }

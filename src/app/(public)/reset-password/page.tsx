@@ -2,6 +2,9 @@ import Link from "next/link";
 import { hashToken } from "@/server/auth/token";
 import { findValidResetToken } from "@/server/repo/password-reset-token-repo";
 import { ResetPasswordForm } from "@/features/auth/components/reset-password-form";
+import { AuthPageShell } from "@/features/auth/components/auth-shell";
+
+const FONT = "var(--font-space-grotesk), sans-serif";
 
 interface ResetPasswordPageProps {
   searchParams: Promise<{ token?: string }>;
@@ -23,17 +26,11 @@ export default async function ResetPasswordPage({
     return <ResetError reason="invalid" />;
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <ResetPasswordForm token={token} />
-      </div>
-    </div>
-  );
+  return <ResetPasswordForm token={token} />;
 }
 
 // ---------------------------------------------------------------------------
-// UI de erro
+// Error state — also uses the auth shell design
 // ---------------------------------------------------------------------------
 
 function ResetError({ reason }: { reason: "missing" | "invalid" }) {
@@ -46,48 +43,77 @@ function ResetError({ reason }: { reason: "missing" | "invalid" }) {
       : "Este link de redefinição expirou ou já foi utilizado. Solicite um novo link abaixo.";
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6 text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-destructive/10">
+    <AuthPageShell
+      footer={
+        <p style={{ fontSize: "12px", color: "#333", fontFamily: FONT }}>
+          Lembrou a senha?{" "}
+          <a href="/login" style={{ color: "#666", textDecoration: "none" }}>Entrar</a>
+        </p>
+      }
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: "26px" }}>
+        {/* Warning icon */}
+        <div style={{
+          width: "56px", height: "56px", borderRadius: "12px",
+          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(200,80,80,0.15)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
           <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="size-8 text-destructive"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            aria-hidden="true"
+            width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke="#9a5a5a" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-            />
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
         </div>
 
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+        {/* Header */}
+        <div>
+          <div style={{
+            fontSize: "11px", fontWeight: 600, color: "#5a5a5a",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+            marginBottom: "14px", fontFamily: FONT,
+          }}>
+            Recuperação
+          </div>
+          <h2 style={{
+            fontSize: "26px", fontWeight: 600, color: "#efefef",
+            letterSpacing: "-0.025em", marginBottom: "8px", lineHeight: 1.18, fontFamily: FONT,
+          }}>
+            {title}
+          </h2>
+          <p style={{ fontSize: "13px", color: "#4a4a4a", lineHeight: 1.6, fontFamily: FONT }}>
             {description}
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        {/* Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <Link
             href="/forgot-password"
-            className="inline-flex h-10 items-center justify-center rounded-md bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors"
+            style={{
+              display: "block", textAlign: "center",
+              padding: "14px", borderRadius: "7px",
+              background: "#f0f0f0", color: "#080808",
+              fontSize: "14px", fontWeight: 600,
+              fontFamily: FONT, textDecoration: "none",
+              letterSpacing: "0.025em",
+            }}
           >
             Solicitar novo link
           </Link>
           <Link
             href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            style={{
+              display: "block", textAlign: "center",
+              fontSize: "12px", color: "#555", textDecoration: "none", fontFamily: FONT,
+            }}
           >
-            Voltar para o login
+            ← Voltar para o login
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageShell>
   );
 }

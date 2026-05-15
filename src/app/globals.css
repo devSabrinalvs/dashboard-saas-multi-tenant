@@ -83,37 +83,50 @@
 }
 
 .dark {
-  --background: oklch(0.12 0.01 250);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.17 0.01 250);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.17 0.01 250);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.65 0.18 255);
-  --primary-foreground: oklch(0.10 0 0);
-  --secondary: oklch(0.24 0.01 250);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.24 0.01 250);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.24 0.01 250);
-  --accent-foreground: oklch(0.97 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.65 0.18 255);
+  /* ── Projorg dark palette ──────────────────────────────────────────────── */
+  /* Background: #080808 */
+  --background: oklch(0.04 0 0);
+  --foreground: oklch(0.93 0 0);
+  /* Cards: slightly lighter than bg, no tint */
+  --card: oklch(0.08 0 0);
+  --card-foreground: oklch(0.93 0 0);
+  /* Popovers / dropdowns */
+  --popover: oklch(0.10 0 0);
+  --popover-foreground: oklch(0.93 0 0);
+  /* Primary: neutral white (#f0f0f0 button, dark text) */
+  --primary: oklch(0.93 0 0);
+  --primary-foreground: oklch(0.04 0 0);
+  /* Secondary / muted surfaces */
+  --secondary: oklch(0.13 0 0);
+  --secondary-foreground: oklch(0.87 0 0);
+  --muted: oklch(0.13 0 0);
+  --muted-foreground: oklch(0.50 0 0);
+  --accent: oklch(1 0 0 / 5%);
+  --accent-foreground: oklch(0.87 0 0);
+  --destructive: oklch(0.60 0.18 22);
+  /* Borders: rgba(255,255,255,0.07) */
+  --border: oklch(1 0 0 / 7%);
+  /* Input bg: #161616 */
+  --input: oklch(1 0 0 / 8%);
+  /* Ring / focus indicator: neutral white */
+  --ring: oklch(1 0 0 / 25%);
+  /* Charts — keep original vibrant colors */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.14 0.01 250);
-  --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.65 0.18 255);
-  --sidebar-primary-foreground: oklch(0.10 0 0);
-  --sidebar-accent: oklch(0.22 0.02 250);
-  --sidebar-accent-foreground: oklch(0.85 0.05 255);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.65 0.18 255);
+  /* Sidebar: #0d0d0d */
+  --sidebar: oklch(0.055 0 0);
+  --sidebar-foreground: oklch(0.87 0 0);
+  --sidebar-primary: oklch(0.93 0 0);
+  --sidebar-primary-foreground: oklch(0.04 0 0);
+  /* Active nav: rgba(255,255,255,0.05) */
+  --sidebar-accent: oklch(1 0 0 / 5%);
+  --sidebar-accent-foreground: oklch(0.93 0 0);
+  /* Sidebar border: rgba(255,255,255,0.05) */
+  --sidebar-border: oklch(1 0 0 / 5%);
+  --sidebar-ring: oklch(1 0 0 / 25%);
 }
 
 @layer base {
@@ -166,95 +179,109 @@
 
 /* ── Label ───────────────────────────────────────────────────────────────── */
 .auth-shell-left [data-slot="label"] {
-  font-size: 11px;
-  font-weight: 600;
-  color: #4a4a4a;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #6b6b6b !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
 }
 
 /* ── Input ───────────────────────────────────────────────────────────────── */
 .auth-shell-left [data-slot="input"] {
-  height: auto;
-  padding: 13px 16px;
-  border-radius: 7px;
-  background-color: #161616;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: #efefef;
-  font-size: 14px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  caret-color: #fff;
-  outline: none;
-  box-shadow: none;
-  transition: border-color 0.18s ease;
+  height: auto !important;
+  min-height: 48px !important;
+  padding: 13px 16px !important;
+  border-radius: 7px !important;
+  background-color: #161616 !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  color: #efefef !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em !important;
+  caret-color: #fff !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color 0.18s ease !important;
 }
 
 /* Password: espaço para o olho */
 .auth-shell-left [data-slot="input"].pr-10 {
-  padding-right: 44px;
+  padding-right: 44px !important;
 }
 
 /* Focus: só borda branca, sem glow azul */
+.auth-shell-left [data-slot="input"]:focus,
 .auth-shell-left [data-slot="input"]:focus-visible {
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: none;
-  outline: none;
+  border-color: rgba(255, 255, 255, 0.30) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-shadow: none !important;
 }
 
 /* Autofill: sem fundo amarelo/azul do browser */
 .auth-shell-left [data-slot="input"]:-webkit-autofill,
 .auth-shell-left [data-slot="input"]:-webkit-autofill:hover,
 .auth-shell-left [data-slot="input"]:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px #161616 inset;
-  -webkit-text-fill-color: #efefef;
-  transition: background-color 9999s;
+  -webkit-box-shadow: 0 0 0px 1000px #161616 inset !important;
+  -webkit-text-fill-color: #efefef !important;
+  transition: background-color 9999s !important;
 }
 
 /* ── Botão submit (principal) ────────────────────────────────────────────── */
 .auth-shell-left [data-slot="button"][type="submit"] {
-  height: auto;
-  padding: 14px 16px;
-  border-radius: 7px;
-  background-color: #f0f0f0;
-  color: #080808;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  box-shadow: none;
+  height: auto !important;
+  min-height: 48px !important;
+  padding: 14px 16px !important;
+  border-radius: 7px !important;
+  background-color: #f0f0f0 !important;
+  color: #080808 !important;
+  border: none !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em !important;
+  box-shadow: none !important;
   transform: none;
-  transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease !important;
 }
 .auth-shell-left [data-slot="button"][type="submit"]:hover:not(:disabled) {
-  background-color: #e8e8e8;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08);
+  background-color: #e8e8e8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08) !important;
 }
 .auth-shell-left [data-slot="button"][type="submit"]:disabled {
-  background-color: #222;
-  color: #444;
-  opacity: 1;
+  background-color: #222 !important;
+  color: #444 !important;
+  opacity: 1 !important;
+}
+.auth-shell-left [data-slot="button"][type="submit"]:focus-visible {
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 /* ── Botões OAuth (outline) ──────────────────────────────────────────────── */
 .auth-shell-left [data-slot="button"][data-variant="outline"] {
-  height: auto;
-  padding: 12px 14px;
-  border-radius: 7px;
-  background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: #c0c0c0;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  height: auto !important;
+  padding: 12px 14px !important;
+  border-radius: 7px !important;
+  background-color: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  color: #c0c0c0 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: none !important;
+  transition: background-color 0.18s ease, border-color 0.18s ease !important;
 }
 .auth-shell-left [data-slot="button"][data-variant="outline"]:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #c0c0c0;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #c0c0c0 !important;
+}
+.auth-shell-left [data-slot="button"][data-variant="outline"]:focus-visible {
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 /* Right panel: oculto no mobile */
